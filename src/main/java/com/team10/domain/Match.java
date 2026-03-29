@@ -89,7 +89,7 @@ public class Match {
         for (Player player : team.getAvailablePlayers()) {
             if (random.nextInt(100) < 5) {
                 int injuryDuration = random.nextInt(3) + 1; // 1 ile 3 maç arası
-                player.injureForWeeks(injuryDuration);
+                player.injureForMatches(injuryDuration);
             }
         }
     }

@@ -5,7 +5,7 @@ public class Player {
     private final String name;
     private final String position;
     private int skill;
-    private int injuryWeeks;
+    private int injuryMatches;
 
     public Player(String name, String position, int skill) {
         if (name == null || name.trim().isEmpty()) {
@@ -21,7 +21,7 @@ public class Player {
         this.name = name;
         this.position = position;
         this.skill = skill;
-        this.injuryWeeks = 0;
+        this.injuryMatches = 0;
     }
 
     public String getName() {
@@ -37,15 +37,15 @@ public class Player {
     }
 
     public int getInjuryWeeks() {
-        return injuryWeeks;
+        return injuryMatches;
     }
 
     public boolean isAvailable() {
-        return injuryWeeks == 0;
+        return injuryMatches == 0;
     }
 
     public boolean isInjured() {
-        return injuryWeeks > 0;
+        return injuryMatches > 0;
     }
 
     public void improveSkill(int amount) {
@@ -55,16 +55,16 @@ public class Player {
         skill += amount;
     }
 
-    public void injureForWeeks(int weeks) {
-        if (weeks <= 0) {
-            throw new IllegalArgumentException("Injury weeks must be positive.");
+    public void injureForMatches(int matches) {
+        if (matches <= 0) {
+            throw new IllegalArgumentException("Injury matches must be positive.");
         }
-        injuryWeeks = weeks;
+        injuryMatches = matches;
     }
 
     public void recoverOneWeek() {
-        if (injuryWeeks > 0) {
-            injuryWeeks--;
+        if (injuryMatches > 0) {
+            injuryMatches--;
         }
     }
 }

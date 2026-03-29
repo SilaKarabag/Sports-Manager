@@ -68,7 +68,7 @@ class LineupTest {
         Sport sport = new FootballSport();
         List<Player> players = createElevenPlayers();
         Team team = createTeamWithPlayers(players);
-        players.get(0).injureForWeeks(2);
+        players.get(0).injureForMatches(2);
 
         assertThrows(IllegalArgumentException.class,
                 () -> new Lineup(team, players, sport));

@@ -76,7 +76,7 @@ class TeamTest {
         Team team = new Team("Team A");
         Player p1 = new Player("Ali", "Forward", 80);
         Player p2 = new Player("Veli", "Defender", 75);
-        p2.injureForWeeks(2);
+        p2.injureForMatches(2);
 
         team.addPlayer(p1);
         team.addPlayer(p2);

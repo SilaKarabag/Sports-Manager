@@ -57,7 +57,7 @@ class PlayerTest {
     void shouldMarkPlayerAsInjuredForGivenWeeks() {
         Player player = new Player("Ali", "Forward", 70);
 
-        player.injureForWeeks(3);
+        player.injureForMatches(3);
 
         assertEquals(3, player.getInjuryWeeks());
         assertTrue(player.isInjured());
@@ -69,13 +69,13 @@ class PlayerTest {
         Player player = new Player("Ali", "Forward", 70);
 
         assertThrows(IllegalArgumentException.class,
-                () -> player.injureForWeeks(0));
+                () -> player.injureForMatches(0));
     }
 
     @Test
     void shouldRecoverOneWeek() {
         Player player = new Player("Ali", "Forward", 70);
-        player.injureForWeeks(2);
+        player.injureForMatches(2);
 
         player.recoverOneWeek();
 
@@ -86,7 +86,7 @@ class PlayerTest {
     @Test
     void shouldBecomeAvailableAfterRecovery() {
         Player player = new Player("Ali", "Forward", 70);
-        player.injureForWeeks(1);
+        player.injureForMatches(1);
 
         player.recoverOneWeek();
 
