@@ -9,12 +9,12 @@ public class Team {
     private final String name;
     private final List<Player> roster;
     private Coach coach;
+    private Lineup currentLineup; // Takımın aktif kadrosu
 
     public Team(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Team name cannot be null or blank.");
         }
-
         this.name = name;
         this.roster = new ArrayList<Player>();
     }
@@ -44,6 +44,11 @@ public class Team {
         roster.add(player);
     }
 
+    /** getRoster() ile aynı — League.java'nın getPlayers() çağrısını karşılar */
+    public List<Player> getPlayers() {
+        return Collections.unmodifiableList(roster);
+    }
+
     public List<Player> getRoster() {
         return Collections.unmodifiableList(roster);
     }
@@ -60,5 +65,18 @@ public class Team {
             }
         }
         return availablePlayers;
+    }
+
+    /** Aktif kadroyu set et (maç öncesi UI veya otomatik atama tarafından çağrılır) */
+    public void setCurrentLineup(Lineup lineup) {
+        if (lineup != null && !lineup.getTeam().equals(this)) {
+            throw new IllegalArgumentException("Lineup does not belong to this team.");
+        }
+        this.currentLineup = lineup;
+    }
+
+    /** League.java'nın maç öncesi çağırdığı metod */
+    public Lineup getCurrentLineup() {
+        return currentLineup;
     }
 }
