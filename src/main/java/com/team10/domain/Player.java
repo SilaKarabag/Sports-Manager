@@ -36,9 +36,8 @@ public class Player {
         return skill;
     }
 
-    public int getInjuryWeeks() {
-        return injuryMatches;
-    }
+    public int getInjuryMatches() { return injuryMatches; }
+
 
     public boolean isAvailable() {
         return injuryMatches == 0;

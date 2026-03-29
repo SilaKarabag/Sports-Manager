@@ -6,7 +6,7 @@ import java.util.*;
 public class League {
     private final Sport sport;
     private final List<Team> teams;
-    private final List<List<Match>> fixtures; // tüm haftaların maçları
+    private final List<List<Match>> fixtures;
     private final List<Match> playedMatches;
     private final Map<Team, TeamRecord> standings;
     private int currentWeek;
@@ -18,20 +18,18 @@ public class League {
         this.teams = teams;
         this.sport = sport;
         this.currentWeek = 0;
-        this.playedMatches = new ArrayList<Match>();
-        this.standings = new HashMap<Team, TeamRecord>();
+        this.playedMatches = new ArrayList<>();
+        this.standings = new HashMap<>();
 
-        // her takım için puan tablosunda sıfır bir kayıt oluştur
         for (Team t : teams) {
             standings.put(t, new TeamRecord(t));
         }
 
-        // 1. fikstürü oluşturur
         this.fixtures = FixtureGenerator.generateFixture(teams, sport);
     }
 
     /**
-     * O haftaki tüm maçları (4 çeyrek dahil) simüle eder ve puan durumunu günceller
+     * O haftaki tüm maçları simüle eder, puan durumunu günceller ve oyuncuları iyileştirir.
      */
     public void playNextWeek() {
         if (isLeagueFinished()) {
@@ -41,33 +39,78 @@ public class League {
         List<Match> currentWeekMatches = fixtures.get(currentWeek);
 
         for (Match match : currentWeekMatches) {
-            // maçın 4 çeyreğini de oynat
+            match.getHomeTeam().setCurrentLineup(null);
+            match.getAwayTeam().setCurrentLineup(null);
+            // Kadro atanmamışsa otomatik olarak müsait oyunculardan oluştur
+            if (match.getHomeTeam().getCurrentLineup() == null) {
+                autoAssignLineup(match.getHomeTeam());
+            }
+            if (match.getAwayTeam().getCurrentLineup() == null) {
+                autoAssignLineup(match.getAwayTeam());
+            }
+
+            match.setHomeLineup(match.getHomeTeam().getCurrentLineup());
+            match.setAwayLineup(match.getAwayTeam().getCurrentLineup());
+
             while (!match.isFinished()) {
                 match.playNextQuarter();
             }
 
             playedMatches.add(match);
-
-            // takımların puan durumunu güncelle
-            TeamRecord homeRecord = standings.get(match.getHomeTeam());
-            TeamRecord awayRecord = standings.get(match.getAwayTeam());
-
-            homeRecord.updateRecord(match.getHomeScore(), match.getAwayScore(), sport);
-            awayRecord.updateRecord(match.getAwayScore(), match.getHomeScore(), sport);
+            updateStandings(match);
         }
 
-        currentWeek++;
+        // Tüm maçlar bittikten sonra oyuncuların sakatlık sürelerini bir azalt
+        for (Team team : teams) {
+            for (Player player : team.getPlayers()) {
+                player.recoverOneWeek();
+            }
+        }
+
+        this.currentWeek++;
     }
 
     /**
-     * sıralama:
-     * 1. Puan
-     * 2. İkili averaj
-     * 3. Genel averaj
-     * 4. yazı tura (alfabetik sıra ile simüle)
+     * Takımın müsait oyuncularından otomatik kadro oluşturur.
+     * Müsait oyuncu sayısı yetersizse mevcut tüm müsait oyuncuları alır.
+     */
+    private void autoAssignLineup(Team team) {
+        List<Player> available = team.getAvailablePlayers();
+        int needed = sport.getLineupSize();
+
+        if (available.size() < needed) {
+            // Yeterli oyuncu yoksa (aşırı sakatlık durumu) mevcut müsait oyuncularla devam et
+            // Bu durum için Sport'un minimum oyuncu sayısını kontrol etmek gerekebilir
+            needed = available.size();
+        }
+
+        List<Player> lineupPlayers = new ArrayList<>(available.subList(0, needed));
+        // Not: available.size() == needed olduğunda Lineup validasyonu geçer
+        if (lineupPlayers.size() == sport.getLineupSize()) {
+            Lineup lineup = new Lineup(team, lineupPlayers, sport);
+            team.setCurrentLineup(lineup);
+        }
+        // Yeterli oyuncu yoksa currentLineup null kalır — Match bunu handle etmeli
+    }
+
+    /**
+     * Maç sonucunu ilgili takımların kayıtlarına işler.
+     */
+    private void updateStandings(Match match) {
+        TeamRecord homeRec = standings.get(match.getHomeTeam());
+        TeamRecord awayRec = standings.get(match.getAwayTeam());
+
+        if (homeRec != null && awayRec != null) {
+            homeRec.addMatchResult(match.getHomeScore(), match.getAwayScore(), sport);
+            awayRec.addMatchResult(match.getAwayScore(), match.getHomeScore(), sport);
+        }
+    }
+
+    /**
+     * Sıralama: 1. Puan → 2. İkili averaj → 3. Genel averaj → 4. Alfabetik (yazı tura simülasyonu)
      */
     public List<TeamRecord> getSortedStandings() {
-        List<TeamRecord> records = new ArrayList<TeamRecord>(standings.values());
+        List<TeamRecord> records = new ArrayList<>(standings.values());
 
         Collections.sort(records, new Comparator<TeamRecord>() {
             @Override
@@ -103,6 +146,11 @@ public class League {
         return currentWeek >= fixtures.size();
     }
 
-    public int getCurrentWeek() { return currentWeek + 1; }
-    public List<Team> getTeams() { return teams; }
+    public int getCurrentWeek() {
+        return currentWeek + 1;
+    }
+
+    public List<Team> getTeams() {
+        return teams;
+    }
 }

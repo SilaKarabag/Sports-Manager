@@ -7,7 +7,10 @@ public class Match {
 
     private final Team homeTeam;
     private final Team awayTeam;
+    private Lineup homeLineup;
+    private Lineup awayLineup;
     private final Sport sport;
+    private final Random random = new Random();
 
     private int homeScore;
     private int awayScore;
@@ -15,9 +18,10 @@ public class Match {
     private int currentQuarter;
     private boolean isFinished;
 
-    public Match(Team homeTeam, Team awayTeam, Sport sport) {
-        if (homeTeam == null || awayTeam == null) {
-            throw new IllegalArgumentException("Teams cannot be null.");
+    // Constructor Güncellendi: Artık Lineup parametrelerini alıyor
+    public Match(Team homeTeam, Team awayTeam, Lineup homeLineup, Lineup awayLineup, Sport sport) {
+        if (homeTeam == null || awayTeam == null || homeLineup == null || awayLineup == null) {
+            throw new IllegalArgumentException("Teams and Lineups cannot be null.");
         }
         if (homeTeam.equals(awayTeam)) {
             throw new IllegalArgumentException("A team cannot play against itself.");
@@ -28,11 +32,26 @@ public class Match {
 
         this.homeTeam = homeTeam;
         this.awayTeam = awayTeam;
+        this.homeLineup = homeLineup;
+        this.awayLineup = awayLineup;
         this.sport = sport;
         this.homeScore = 0;
         this.awayScore = 0;
         this.currentQuarter = 0;
         this.isFinished = false;
+    }
+    // Fikstür oluşturulurken kullanılacak "hafif" constructor
+    public Match(Team homeTeam, Team awayTeam, Sport sport) {
+        this.homeTeam = homeTeam;
+        this.awayTeam = awayTeam;
+        this.sport = sport;
+        this.homeScore = 0;
+        this.awayScore = 0;
+        this.currentQuarter = 0;
+        this.isFinished = false;
+        // Kadrolar maç başlayana kadar null kalabilir veya boş atanabilir
+        this.homeLineup = null;
+        this.awayLineup = null;
     }
 
     public void playNextQuarter() {
@@ -41,58 +60,59 @@ public class Match {
         }
 
         currentQuarter++;
-        Random random = new Random();
 
-        int homePower = calculateTeamPower(homeTeam);
-        int awayPower = calculateTeamPower(awayTeam);
+        // HESAPLAMA: Artık Team yerine sahadaki Lineup (Kadro) gücü kullanılıyor
+        int homePower = calculateLineupPower(homeLineup, homeTeam.getCoach());
+        int awayPower = calculateLineupPower(awayLineup, awayTeam.getCoach());
 
+        // Skor üretimi (Random nesnesi yukarıdan geliyor)
         int homeGoals = random.nextInt(Math.max(1, (homePower / 20) + 2));
         int awayGoals = random.nextInt(Math.max(1, (awayPower / 20) + 2));
 
         this.homeScore += homeGoals;
         this.awayScore += awayGoals;
 
-        if (currentQuarter == 4) {
+        // Bitiş kontrolü Sport interface'inden dinamik gelmeli (Örn: Headball 4, Futbol 2)
+        if (currentQuarter >= sport.getQuarterCount()) {
             finishMatch();
         }
     }
 
     /**
-     * Takımın sahadaki oyuncularının ve koçunun yeteneğini toplar.
+     * Sadece sahadaki (Lineup içindeki) oyuncuların ve koçun yeteneğini hesaplar.
      */
-    private int calculateTeamPower(Team team) {
+    private int calculateLineupPower(Lineup lineup, Coach coach) {
+        if (lineup == null) return 10;
         int power = 0;
-        for (Player p : team.getAvailablePlayers()) {
+        for (Player p : lineup.getPlayers()) {
             power += p.getSkill();
         }
-        if (team.getCoach() != null) {
-            power += team.getCoach().getTrainingBonus();
+        if (coach != null) {
+            power += coach.getTrainingBonus();
         }
-        return power > 0 ? power : 10; // Takım boşsa veya gücü 0 ise varsayılan değer
+        return power > 0 ? power : 10;
     }
 
-    /**
-     * Maçı bitir ve rastgele sakatlık kuralı
-     */
     private void finishMatch() {
         this.isFinished = true;
-        applyInjuries(homeTeam);
-        applyInjuries(awayTeam);
+        applyInjuries(homeLineup); // Sadece maçta oynayanlar sakatlanabilir
+        applyInjuries(awayLineup);
     }
 
     /**
-     * Maç sonu oyuncularda %5 ihtimalle 1-3 maç arası sakatlık oluştur
+     * Maç sonunda sahadaki oyuncularda %5 ihtimalle sakatlık oluşturur.
      */
-    private void applyInjuries(Team team) {
-        Random random = new Random();
-        // isAvailable oyuncular sakatlanabilir
-        for (Player player : team.getAvailablePlayers()) {
+    private void applyInjuries(Lineup lineup) {
+        for (Player player : lineup.getPlayers()) {
             if (random.nextInt(100) < 5) {
-                int injuryDuration = random.nextInt(3) + 1; // 1 ile 3 maç arası
+                int injuryDuration = random.nextInt(3) + 1;
                 player.injureForMatches(injuryDuration);
             }
         }
     }
+
+    public void setHomeLineup(Lineup homeLineup) { this.homeLineup = homeLineup; }
+    public void setAwayLineup(Lineup awayLineup) { this.awayLineup = awayLineup; }
 
     public Team getHomeTeam() { return homeTeam; }
     public Team getAwayTeam() { return awayTeam; }
