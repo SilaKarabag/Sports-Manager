@@ -42,8 +42,9 @@ public class App {
         // 5. Simulate the League (Play all fixtures week by week)
         System.out.println("\nLeague is starting...");
         while (!superLeague.isLeagueFinished()) {
-            System.out.println("Playing Week " + superLeague.getCurrentWeek() + "...");
-            superLeague.playNextWeek();
+            int weekNumber = superLeague.getCurrentWeek(); // önce hafta numarasını al
+            superLeague.playNextWeek();                    // sonra oyna
+            System.out.println("Week " + weekNumber + " played."); // sonra yazdır
         }
         System.out.println("League finished!\n");
 
