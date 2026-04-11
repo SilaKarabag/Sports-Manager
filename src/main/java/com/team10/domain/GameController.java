@@ -41,4 +41,8 @@ public class GameController {
             throw new IllegalStateException("Game not started.");
         }
     }
+
+    public Team getManagedTeam() {
+        ensureSession(); return session.getManagedTeam();
+    }
 }
