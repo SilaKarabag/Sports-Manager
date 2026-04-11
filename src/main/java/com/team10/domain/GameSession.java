@@ -15,6 +15,9 @@ public class GameSession {
     }
 
     public void advanceWeek() {
+        if (league == null) {
+            throw new IllegalStateException("League must be set before advancing week.");
+        }
         league.playNextWeek();
     }
 
