@@ -1,7 +1,6 @@
 package com.team10.domain;
 
 import com.team10.sports.Sport;
-import java.util.Objects;
 
 public class GameSession {
 
