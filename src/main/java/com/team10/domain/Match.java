@@ -103,6 +103,9 @@ public class Match {
      * Maç sonunda sahadaki oyuncularda %5 ihtimalle sakatlık oluşturur.
      */
     private void applyInjuries(Lineup lineup) {
+        if (lineup==null){
+            return;
+        }
         for (Player player : lineup.getPlayers()) {
             if (random.nextInt(100) < 5) {
                 int injuryDuration = random.nextInt(3) + 1;
