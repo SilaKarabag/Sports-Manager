@@ -2,8 +2,8 @@ package com.team10.domain;
 
 import com.team10.sports.FootballSport;
 import com.team10.sports.Sport;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TeamRecordTest {
 
