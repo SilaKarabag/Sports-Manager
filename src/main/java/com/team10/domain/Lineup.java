@@ -7,8 +7,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.io.Serializable;
 
-public class Lineup {
+public class Lineup implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final Team team;
     private final List<Player> players;

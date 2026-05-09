@@ -1,6 +1,8 @@
 package com.team10.sports;
+import java.io.Serializable;
 
-public abstract class AbstractSport implements Sport {
+public abstract class AbstractSport implements Sport, Serializable  {
+    private static final long serialVersionUID = 1L;
 
     private final String sportName;
     private final int lineupSize;

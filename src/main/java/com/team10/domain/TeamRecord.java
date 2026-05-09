@@ -1,8 +1,10 @@
 package com.team10.domain;
 
 import com.team10.sports.Sport;
+import java.io.Serializable;
 
-public class TeamRecord {
+public class TeamRecord implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final Team team;
     private int matchesPlayed;
     private int wins;

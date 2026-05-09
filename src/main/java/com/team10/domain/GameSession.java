@@ -1,8 +1,10 @@
 package com.team10.domain;
+import java.io.Serializable;
 
 import com.team10.sports.Sport;
 
-public class GameSession {
+public class GameSession implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private Sport sport;
     private League league;

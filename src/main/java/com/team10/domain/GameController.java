@@ -4,8 +4,19 @@ import com.team10.sports.Sport;
 import java.util.List;
 
 public class GameController {
-
     private GameSession session;
+
+    public GameSession getSession() {
+        return session;
+    }
+    public void loadSession(GameSession session) {
+
+        if (session == null) {
+            throw new IllegalArgumentException("GameSession cannot be null.");
+        }
+
+        this.session = session;
+    }
 
     // START NEW GAME
     public void startNewGame(Sport sport, List<Team> teams) {

@@ -1,6 +1,7 @@
 package com.team10.sports;
+import java.io.Serializable;
 
-public interface Sport {
+public interface Sport extends Serializable {
 
     String getSportName();
 

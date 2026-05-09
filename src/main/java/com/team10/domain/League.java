@@ -2,8 +2,10 @@ package com.team10.domain;
 
 import com.team10.sports.Sport;
 import java.util.*;
+import java.io.Serializable;
 
-public class League {
+public class League implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final Sport sport;
     private final List<Team> teams;
     private final List<List<Match>> fixtures;

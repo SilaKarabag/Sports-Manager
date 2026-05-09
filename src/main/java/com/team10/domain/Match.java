@@ -2,8 +2,10 @@ package com.team10.domain;
 
 import com.team10.sports.Sport;
 import java.util.Random;
+import java.io.Serializable;
 
-public class Match {
+public class Match implements Serializable{
+    private static final long serialVersionUID = 1L;
 
     private final Team homeTeam;
     private final Team awayTeam;
