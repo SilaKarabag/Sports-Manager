@@ -56,4 +56,25 @@ public class AudioManager {
         return soundOn ? "Sound OFF" : "Sound ON";
     }
 
+    public static void playSFX(String path) {
+
+        try {
+            URL resource = AudioManager.class.getResource(path);
+            if (resource == null) return;
+
+            Media media = new Media(resource.toExternalForm());
+            MediaPlayer sfx = new MediaPlayer(media);
+
+            sfx.setVolume(0.5);
+
+            sfx.setOnEndOfMedia(() -> {
+                sfx.dispose();
+            });
+
+            sfx.play();
+
+        } catch (Exception ignored) {
+        }
+    }
+
 }

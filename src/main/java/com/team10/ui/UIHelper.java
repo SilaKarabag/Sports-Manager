@@ -5,22 +5,18 @@ import javafx.scene.control.Button;
 public class UIHelper {
 
     private static final String NORMAL_STYLE =
-        "-fx-background-color: rgba(255,255,255,0.06);" +
-            "-fx-border-color: rgba(192,192,192,0.45);" +
+        "-fx-background-color: rgba(0,0,0,0.45);" +
+            "-fx-border-color: rgba(255,255,255,0.25);" +
             "-fx-border-width: 1;" +
-            "-fx-text-fill: silver;" +
+            "-fx-text-fill: white;" +
             "-fx-font-size: 14px;" +
-            "-fx-font-weight: normal;" +
             "-fx-background-radius: 6;" +
             "-fx-border-radius: 6;";
 
     private static final String HOVER_STYLE =
-        "-fx-background-color: rgba(255,255,255,0.14);" +
-            "-fx-border-color: rgba(255,255,255,0.75);" +
-            "-fx-border-width: 1;" +
+        "-fx-background-color: rgba(0,0,0,0.60);" +
+            "-fx-border-color: rgba(255,255,255,0.40);" +
             "-fx-text-fill: white;" +
-            "-fx-font-size: 14px;" +
-            "-fx-font-weight: normal;" +
             "-fx-background-radius: 6;" +
             "-fx-border-radius: 6;";
 
