@@ -31,8 +31,6 @@ public class LeagueView {
 
     public LeagueView(MainWindow window) {
 
-        AudioManager.startBGM();
-
         ImageView bg = createBackground("/images/football.gif");
 
         root = new StackPane();
@@ -74,8 +72,6 @@ public class LeagueView {
 
                 nextWeek.setDisable(true);
 
-                AudioManager.stopBGM();
-
                 new EndScreen(
                     window,
                     controller.getLeague()
@@ -93,8 +89,6 @@ public class LeagueView {
 
                 nextWeek.setDisable(true);
 
-                AudioManager.stopBGM();
-
                 new EndScreen(
                     window,
                     controller.getLeague()
@@ -110,6 +104,8 @@ public class LeagueView {
             table,
             nextWeek
         );
+
+        content.setAlignment(Pos.BOTTOM_LEFT);
 
         content.setPadding(new Insets(20));
 
@@ -221,12 +217,21 @@ public class LeagueView {
 
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        table.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);" +
-                "-fx-control-inner-background: rgba(255,255,255,0.05);" +
+        /*table.setStyle(
+            "-fx-control-inner-background: rgba(255,255,255,0.05);" +
                 "-fx-control-inner-background-alt: rgba(255,255,255,0.03);" +
                 "-fx-table-header-border-color: rgba(0,0,0,0.4);" +
                 "-fx-table-cell-border-color: rgba(0,0,0,0.25);" +
+                "-fx-background-insets: 0;" +
+                "-fx-padding: 0;"
+        );*/
+
+        table.setStyle(
+            "-fx-background-color: rgba(0,0,0,0.55);" +
+                "-fx-control-inner-background: rgba(255,255,255,0.10);" +
+                "-fx-control-inner-background-alt: rgba(255,255,255,0.08);" +
+                "-fx-table-cell-border-color: rgba(0,0,0,0.25);" +
+                "-fx-table-header-border-color: rgba(255,255,255,0.25);" +
                 "-fx-background-insets: 0;" +
                 "-fx-padding: 0;"
         );

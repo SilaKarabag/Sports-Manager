@@ -49,6 +49,8 @@ public class MainWindow {
 
     public void showLeague() {
 
+        AudioManager.startBGM();
+
         LeagueView view = new LeagueView(this);
 
         stage.setScene(new Scene(view.getRoot()));

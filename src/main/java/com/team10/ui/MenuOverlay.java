@@ -94,8 +94,8 @@ public class MenuOverlay {
         root.setPadding(new Insets(25));
 
         root.setStyle(
-            "-fx-background-color: rgba(22,22,22,0.97);" +
-                "-fx-border-color: rgba(192,192,192,0.45);" +
+            "-fx-background-color: rgba(0,0,0,0.70);" +
+                "-fx-border-color: rgba(255,255,255,0.25);" +
                 "-fx-border-width: 1;" +
                 "-fx-background-radius: 6;" +
                 "-fx-border-radius: 6;"

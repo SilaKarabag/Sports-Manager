@@ -7,6 +7,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -35,8 +37,18 @@ public class EndScreen {
         title.setStyle(
             "-fx-font-size: 28px;" +
                 "-fx-font-weight: bold;" +
-                "-fx-text-fill: silver;"
+                "-fx-text-fill: white;"
         );
+
+        ImageView trophy = new ImageView(
+            new Image(
+                EndScreen.class.getResource("/images/trophy.png").toExternalForm()
+            )
+        );
+
+        trophy.setFitWidth(120);
+        trophy.setFitHeight(120);
+        trophy.setPreserveRatio(true);
 
         Label winnerLabel = new Label(
             "Winner: " + winner.getTeam().getName()
@@ -44,7 +56,7 @@ public class EndScreen {
 
         winnerLabel.setStyle(
             "-fx-font-size: 18px;" +
-                "-fx-text-fill: white;"
+                "-fx-text-fill: gold;"
         );
 
         Button returnLeague = new Button("Return to League");
@@ -55,7 +67,7 @@ public class EndScreen {
         UIHelper.style(mainMenu);
         UIHelper.style(quit);
 
-        returnLeague.setOnAction(e -> stage.close());
+        returnLeague.setOnAction(e -> {stage.close(); window.showLeague();});
 
         mainMenu.setOnAction(e -> {
             stage.close();
@@ -67,6 +79,7 @@ public class EndScreen {
         VBox root = new VBox(
             18,
             title,
+            trophy,
             winnerLabel,
             returnLeague,
             mainMenu,
@@ -78,15 +91,19 @@ public class EndScreen {
 
         root.setStyle(
             "-fx-background-color: rgba(22,22,22,0.97);" +
-                "-fx-border-color: rgba(192,192,192,0.45);" +
-                "-fx-border-width: 1;" +
-                "-fx-border-radius: 6;"
+                "-fx-border-color: gold;" +
+                "-fx-border-width: 2;" +
+                "-fx-border-radius: 10;"
         );
 
-        stage.setScene(new Scene(root, 340, 320));
+        stage.setScene(new Scene(root, 340, 450));
     }
 
     public void show() {
+
+        AudioManager.stopBGM();
+        AudioManager.playSFX("/audio/winner.mp3");
+
         stage.show();
     }
 }
