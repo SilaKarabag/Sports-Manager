@@ -41,6 +41,8 @@ public class SportSelectionView {
         Button football = new Button("Football");
         Button volleyball = new Button("Volleyball");
 
+        volleyball.setDisable(true);
+
         UIHelper.style(football);
         UIHelper.style(volleyball);
 
@@ -85,12 +87,13 @@ public class SportSelectionView {
             )
         );
 
+/*
         Image volleyballGif = new Image(
             getClass().getResourceAsStream(
                 "/images/volleyball.jpg"
             )
         );
-
+*/
         StackPane previewPane = new StackPane(
             previewBox,
             previewGif
@@ -125,6 +128,7 @@ public class SportSelectionView {
             );
         });
 
+/*
         volleyball.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
 
             previewGif.setImage(volleyballGif);
@@ -144,7 +148,7 @@ public class SportSelectionView {
                 "Hover over a sport"
             );
         });
-
+*/
         VBox center = new VBox(
             25,
             title,

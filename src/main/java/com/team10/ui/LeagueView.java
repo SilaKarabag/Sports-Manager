@@ -217,15 +217,6 @@ public class LeagueView {
 
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        /*table.setStyle(
-            "-fx-control-inner-background: rgba(255,255,255,0.05);" +
-                "-fx-control-inner-background-alt: rgba(255,255,255,0.03);" +
-                "-fx-table-header-border-color: rgba(0,0,0,0.4);" +
-                "-fx-table-cell-border-color: rgba(0,0,0,0.25);" +
-                "-fx-background-insets: 0;" +
-                "-fx-padding: 0;"
-        );*/
-
         table.setStyle(
             "-fx-background-color: rgba(0,0,0,0.55);" +
                 "-fx-control-inner-background: rgba(255,255,255,0.10);" +
