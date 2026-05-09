@@ -1,9 +1,5 @@
 package com.team10.ui;
-import java.io.File;
-import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 
@@ -60,7 +56,4 @@ public class AudioManager {
         return soundOn ? "Sound OFF" : "Sound ON";
     }
 
-    public static boolean isSoundOn() {
-        return soundOn;
-    }
 }
