@@ -211,9 +211,7 @@ public class LeagueView {
 
         table.setFixedCellSize(ROW_HEIGHT);
 
-        table.setColumnResizePolicy(
-            TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN
-        );
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         table.setStyle(
             "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);" +
