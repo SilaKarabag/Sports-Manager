@@ -1,6 +1,8 @@
 package com.team10.domain;
+import java.io.Serializable;
 
-public class Coach {
+public class Coach implements Serializable  {
+    private static final long serialVersionUID = 1L;
 
     private final String name;
     private final int trainingBonus;

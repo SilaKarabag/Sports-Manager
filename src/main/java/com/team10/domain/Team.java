@@ -3,8 +3,10 @@ package com.team10.domain;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.io.Serializable;
 
-public class Team {
+public class Team implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final String name;
     private final List<Player> roster;

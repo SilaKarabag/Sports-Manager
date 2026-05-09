@@ -1,6 +1,8 @@
 package com.team10.sports;
+import java.io.Serializable;
 
-public class FootballSport extends AbstractSport {
+public class FootballSport extends AbstractSport implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     public FootballSport() {
         super("Football", 11, 5, 3, 1, 0, 2); // 2 yarı
