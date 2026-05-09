@@ -7,11 +7,14 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 
 public class LeagueView {
 
-    private final BorderPane root;
+    //private final BorderPane root;
+    private final StackPane root;
 
     private final Label weekLabel = new Label();
 
@@ -33,7 +36,12 @@ public class LeagueView {
 
         //AudioManager.startBGM();
 
-        root = new BorderPane();
+        ImageView bg = createBackground("/images/football.gif");
+
+        //root = new BorderPane();
+        root = new StackPane();
+
+        BorderPane layout = new BorderPane();
 
         root.setStyle(
             "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);"
@@ -106,11 +114,12 @@ public class LeagueView {
 
         content.setPadding(new Insets(20));
 
-        root.setTop(topBar);
-
-        root.setCenter(content);
+        layout.setTop(topBar);
+        layout.setCenter(content);
 
         updateUI(window);
+
+        root.getChildren().addAll(bg, layout);
 
 
     }
@@ -253,6 +262,21 @@ public class LeagueView {
 
     public Parent getRoot() {
         return root;
+    }
+
+    private ImageView createBackground(String path) {
+
+        Image image = new Image(
+            getClass().getResource(path).toExternalForm()
+        );
+
+        ImageView bg = new ImageView(image);
+
+        bg.setFitWidth(900);
+        bg.setFitHeight(600);
+        bg.setPreserveRatio(false);
+
+        return bg;
     }
 
 }
