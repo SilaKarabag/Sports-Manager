@@ -8,11 +8,35 @@ import java.util.List;
 import java.util.Random;
 
 public class App {
+
+
+    private static Sport selectSport(String[] args) {
+        String requested = null;
+        if (args != null && args.length > 0 && args[0] != null) {
+            requested = args[0];
+        } else {
+            String env = System.getenv("SPORTS_MANAGER_SPORT");
+            if (env != null && !env.isEmpty()) requested = env;
+        }
+        if (requested == null) return new FootballSport();
+
+        switch (requested.trim().toLowerCase()) {
+            case "volleyball":
+            case "vb":
+                return new VolleyballSport();
+            case "football":
+            case "fb":
+            default:
+                return new FootballSport();
+        }
+    }
+
     public static void main(String[] args) {
         System.out.println("--- Sports Manager Simulation Starting ---");
 
-        // 1. Choose the sport (testing with football )
-        Sport football = new FootballSport();
+        // 1. Choose the sport (football by default; pass "volleyball" to switch)
+        Sport sport = selectSport(args);
+        System.out.println("Selected sport: " + sport.getSportName());
 
         // 2. Create Teams
         Team teamA = new Team("Red Eagles");
@@ -27,17 +51,18 @@ public class App {
         teams.add(teamD);
 
         // 3. Add Random Players and a Coach to Each Team
+        //    Roster size scales to the sport so the auto-lineup always succeeds.
         Random random = new Random();
+        int rosterSize = Math.max(11, sport.getLineupSize() + 4);
         for (Team team : teams) {
             team.setCoach(new Coach(team.getName() + " Coach", random.nextInt(10)));
-            // Adding 11 players to the roster
-            for (int i = 1; i <= 11; i++) {
+            for (int i = 1; i <= rosterSize; i++) {
                 team.addPlayer(new Player(team.getName() + " Player " + i, "Position", 50 + random.nextInt(50)));
             }
         }
 
         // 4. Set up the League (Initializing the core engine)
-        League superLeague = new League(teams, football);
+        League superLeague = new League(teams, sport);
 
         // 5. Simulate the League (Play all fixtures week by week)
         System.out.println("\nLeague is starting...");
