@@ -1,4 +1,10 @@
 package com.team10.ui;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 
 
@@ -8,21 +14,25 @@ public class AudioManager {
 
     private static boolean soundOn = true;
 
-    //private static final String BGM_PATH = "/src/audio/bgm.mp3";
-
     public static void startBGM() {
 
         if (!soundOn) return;
 
-        if (bgmPlayer != null) return;
+        if (bgmPlayer != null) {
+            if (!bgmPlayer.getStatus().equals(MediaPlayer.Status.PLAYING)) {
+                bgmPlayer.play();
+            }
+            return;
+        }
 
-        //resource problem will fix later
+        URL resource = AudioManager.class.getResource("/audio/bgm.mp3");
+        if (resource == null) return;
 
-        //Media media = new Media(resource.toString());
-        //bgmPlayer = new MediaPlayer(media);
+        Media media = new Media(resource.toExternalForm());
+        bgmPlayer = new MediaPlayer(media);
 
         bgmPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-        bgmPlayer.setVolume(0.5);
+        bgmPlayer.setVolume(0.3);
         bgmPlayer.play();
     }
 

@@ -13,7 +13,6 @@ import javafx.scene.layout.*;
 
 public class LeagueView {
 
-    //private final BorderPane root;
     private final StackPane root;
 
     private final Label weekLabel = new Label();
@@ -32,13 +31,10 @@ public class LeagueView {
 
     public LeagueView(MainWindow window) {
 
-        //will add background image
-
-        //AudioManager.startBGM();
+        AudioManager.startBGM();
 
         ImageView bg = createBackground("/images/football.gif");
 
-        //root = new BorderPane();
         root = new StackPane();
 
         BorderPane layout = new BorderPane();
@@ -47,7 +43,6 @@ public class LeagueView {
             "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);"
         );
 
-        // ONLY these labels are white
         weekLabel.setStyle(
             "-fx-text-fill: white;" +
                 "-fx-font-size: 18px;"
@@ -79,6 +74,8 @@ public class LeagueView {
 
                 nextWeek.setDisable(true);
 
+                AudioManager.stopBGM();
+
                 new EndScreen(
                     window,
                     controller.getLeague()
@@ -95,6 +92,8 @@ public class LeagueView {
             if (controller.getLeague().isLeagueFinished()) {
 
                 nextWeek.setDisable(true);
+
+                AudioManager.stopBGM();
 
                 new EndScreen(
                     window,
