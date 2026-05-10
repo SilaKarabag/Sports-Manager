@@ -1,6 +1,7 @@
 package com.team10.domain;
 
 import com.team10.sports.Sport;
+import com.team10.sports.VolleyballSport;
 import java.util.*;
 import java.io.Serializable;
 
@@ -17,7 +18,7 @@ public class League implements Serializable {
         if (teams == null || teams.size() < 2) throw new IllegalArgumentException("Not enough teams.");
         if (sport == null) throw new IllegalArgumentException("Sport cannot be null.");
 
-        this.teams = teams;
+        this.teams = new ArrayList<>(teams);
         this.sport = sport;
         this.currentWeek = 0;
         this.playedMatches = new ArrayList<>();
@@ -30,9 +31,6 @@ public class League implements Serializable {
         this.fixtures = FixtureGenerator.generateFixture(teams, sport);
     }
 
-    /**
-     * O haftaki tüm maçları simüle eder, puan durumunu günceller ve oyuncuları iyileştirir.
-     */
     public void playNextWeek() {
         if (isLeagueFinished()) {
             throw new IllegalStateException("The league is already finished.");
@@ -41,9 +39,7 @@ public class League implements Serializable {
         List<Match> currentWeekMatches = fixtures.get(currentWeek);
 
         for (Match match : currentWeekMatches) {
-            match.getHomeTeam().setCurrentLineup(null);
-            match.getAwayTeam().setCurrentLineup(null);
-            // Kadro atanmamışsa otomatik olarak müsait oyunculardan oluştur
+            // Otomatik kadro atama (Eğer kullanıcı manuel atamamışsa)
             if (match.getHomeTeam().getCurrentLineup() == null) {
                 autoAssignLineup(match.getHomeTeam());
             }
@@ -54,15 +50,20 @@ public class League implements Serializable {
             match.setHomeLineup(match.getHomeTeam().getCurrentLineup());
             match.setAwayLineup(match.getAwayTeam().getCurrentLineup());
 
+            // Maçı sonuna kadar oynat
             while (!match.isFinished()) {
                 match.playNextQuarter();
             }
 
             playedMatches.add(match);
             updateStandings(match);
+
+            // Maç bitince kadroları sıfırla (Bir sonraki hafta sakatlık kontrolü için)
+            match.getHomeTeam().setCurrentLineup(null);
+            match.getAwayTeam().setCurrentLineup(null);
         }
 
-        // Tüm maçlar bittikten sonra oyuncuların sakatlık sürelerini bir azalt
+        // Sakatlık iyileşme süreci
         for (Team team : teams) {
             for (Player player : team.getPlayers()) {
                 player.recoverOneWeek();
@@ -72,32 +73,21 @@ public class League implements Serializable {
         this.currentWeek++;
     }
 
-    /**
-     * Takımın müsait oyuncularından otomatik kadro oluşturur.
-     * Müsait oyuncu sayısı yetersizse mevcut tüm müsait oyuncuları alır.
-     */
     private void autoAssignLineup(Team team) {
         List<Player> available = team.getAvailablePlayers();
         int needed = sport.getLineupSize();
 
-        if (available.size() < needed) {
-            // Yeterli oyuncu yoksa (aşırı sakatlık durumu) mevcut müsait oyuncularla devam et
-            // Bu durum için Sport'un minimum oyuncu sayısını kontrol etmek gerekebilir
-            needed = available.size();
-        }
-
-        List<Player> lineupPlayers = new ArrayList<>(available.subList(0, needed));
-        // Not: available.size() == needed olduğunda Lineup validasyonu geçer
-        if (lineupPlayers.size() == sport.getLineupSize()) {
+        if (available.size() >= needed) {
+            List<Player> lineupPlayers = new ArrayList<>(available.subList(0, needed));
             Lineup lineup = new Lineup(team, lineupPlayers, sport);
             team.setCurrentLineup(lineup);
+        } else {
+            // Eğer yeterli oyuncu yoksa eldeki tüm sağlamları sahaya sür
+            Lineup lineup = new Lineup(team, new ArrayList<>(available), sport);
+            team.setCurrentLineup(lineup);
         }
-        // Yeterli oyuncu yoksa currentLineup null kalır — Match bunu handle etmeli
     }
 
-    /**
-     * Maç sonucunu ilgili takımların kayıtlarına işler.
-     */
     private void updateStandings(Match match) {
         TeamRecord homeRec = standings.get(match.getHomeTeam());
         TeamRecord awayRec = standings.get(match.getAwayTeam());
@@ -108,38 +98,11 @@ public class League implements Serializable {
         }
     }
 
-    /**
-     * Sıralama: 1. Puan → 2. İkili averaj → 3. Genel averaj → 4. Alfabetik (yazı tura simülasyonu)
-     */
     public List<TeamRecord> getSortedStandings() {
         List<TeamRecord> records = new ArrayList<>(standings.values());
 
-        Collections.sort(records, new Comparator<TeamRecord>() {
-            @Override
-            public int compare(TeamRecord r1, TeamRecord r2) {
-                if (r1.getPoints() != r2.getPoints()) {
-                    return Integer.compare(r2.getPoints(), r1.getPoints());
-                }
-
-                int hth1 = 0, hth2 = 0;
-                for (Match m : playedMatches) {
-                    if (m.getHomeTeam().equals(r1.getTeam()) && m.getAwayTeam().equals(r2.getTeam())) {
-                        hth1 += m.getHomeScore(); hth2 += m.getAwayScore();
-                    } else if (m.getHomeTeam().equals(r2.getTeam()) && m.getAwayTeam().equals(r1.getTeam())) {
-                        hth1 += m.getAwayScore(); hth2 += m.getHomeScore();
-                    }
-                }
-                if (hth1 != hth2) {
-                    return Integer.compare(hth2, hth1);
-                }
-
-                if (r1.getGoalDifference() != r2.getGoalDifference()) {
-                    return Integer.compare(r2.getGoalDifference(), r1.getGoalDifference());
-                }
-
-                return r1.getTeam().getName().compareTo(r2.getTeam().getName());
-            }
-        });
+        // Spora özel sıralayıcıyı kullan (Voleybol ve Futbol farkı için)
+        Collections.sort(records, sport.getStandingComparator());
 
         return records;
     }
@@ -151,8 +114,9 @@ public class League implements Serializable {
     public int getCurrentWeek() {
         return currentWeek + 1;
     }
-
     public List<Team> getTeams() {
         return teams;
     }
+
+    public List<Match> getPlayedMatches() { return playedMatches; }
 }
