@@ -56,7 +56,7 @@ public class LeagueView {
 
         UIHelper.style(nextWeek);
 
-        setupTable(window);
+        setupTable();
 
         Button menuButton = MenuOverlay.createMenuButton(window);
 
@@ -122,7 +122,7 @@ public class LeagueView {
         return pane;
     }
 
-    private void setupTable(MainWindow window) {
+    private void setupTable() {
 
         String scoredLabel = footballMode ? "GF" : "PF";
         String concededLabel = footballMode ? "GA" : "PA";
