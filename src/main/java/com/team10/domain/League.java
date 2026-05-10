@@ -19,7 +19,9 @@ public class League implements Serializable {
         if (sport == null) throw new IllegalArgumentException("Sport cannot be null.");
 
         this.teams = new ArrayList<>(teams);
+
         this.sport = sport;
+        ensureEnoughPlayersForSeason();
         this.currentWeek = 0;
         this.playedMatches = new ArrayList<>();
         this.standings = new HashMap<>();
@@ -72,22 +74,34 @@ public class League implements Serializable {
 
         this.currentWeek++;
     }
+    private void ensureEnoughPlayersForSeason() {
+        int minimumPlayers = sport.getLineupSize() + 4;
+
+        for (Team team : teams) {
+            int currentSize = team.getPlayers().size();
+
+            for (int i = currentSize + 1; i <= minimumPlayers; i++) {
+                team.addPlayer(new Player(
+                        team.getName() + " Reserve " + i,
+                        "Reserve",
+                        60
+                ));
+            }
+        }
+    }
 
     private void autoAssignLineup(Team team) {
         List<Player> available = team.getAvailablePlayers();
         int needed = sport.getLineupSize();
 
-        if (available.size() >= needed) {
-            List<Player> lineupPlayers = new ArrayList<>(available.subList(0, needed));
-            Lineup lineup = new Lineup(team, lineupPlayers, sport);
-            team.setCurrentLineup(lineup);
-        } else {
-            // Eğer yeterli oyuncu yoksa eldeki tüm sağlamları sahaya sür
-            Lineup lineup = new Lineup(team, new ArrayList<>(available), sport);
-            team.setCurrentLineup(lineup);
+        if (available.size() < needed) {
+            throw new IllegalStateException("Not enough available players to create a valid lineup.");
         }
-    }
 
+        List<Player> lineupPlayers = new ArrayList<>(available.subList(0, needed));
+        Lineup lineup = new Lineup(team, lineupPlayers, sport);
+        team.setCurrentLineup(lineup);
+    }
     private void updateStandings(Match match) {
         TeamRecord homeRec = standings.get(match.getHomeTeam());
         TeamRecord awayRec = standings.get(match.getAwayTeam());
