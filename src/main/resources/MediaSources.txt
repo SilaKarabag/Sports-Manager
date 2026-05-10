@@ -1,0 +1,17 @@
+Images
+
+    football.gif - Aidan Yelamos Berbel (ArtStation)
+        https://www.artstation.com/artwork/YBk0Yd
+
+    trophy.png - [unknown] (Clipartmax)
+        https://www.clipartmax.com/middle/m2H7i8K9N4i8H7H7_trophy-trophy-pixel-art-png/
+
+Audio
+
+    bgm.mp3 - MrMark81 (Pixabay)
+        https://pixabay.com/sound-effects/people-stadium-roar-concert-471943/
+
+    winner.mp3 - PuyoPuyoMegaFan1234 (Pixabay)
+        https://pixabay.com/sound-effects/film-special-effects-winner-game-sound-404167/
+
+Asset names were changed for code simplicity.
