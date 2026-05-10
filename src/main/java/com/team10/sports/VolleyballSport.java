@@ -11,9 +11,10 @@ public class VolleyballSport extends AbstractSport implements Serializable {
     public static final int    LINEUP_SIZE     = 6;
     public static final int    SUBSTITUTE_LIMIT = 6;
     public static final int    SET_COUNT       = 5;
-    public static final int    POINTS_FOR_WIN  = 2; // Voleybolda galibiyet genelde 2 puandır
+    public static final int POINTS_FOR_WIN  = 3;
+    public static final int POINTS_FOR_LOSS = 0;
     public static final int    POINTS_FOR_DRAW = 0; // Beraberlik yok
-    public static final int    POINTS_FOR_LOSS = 1; // Mağlubiyete voleybolda genelde 1 puan verilir (katılım puanı)
+
 
     public VolleyballSport() {
         super(SPORT_NAME,
@@ -33,6 +34,25 @@ public class VolleyballSport extends AbstractSport implements Serializable {
     @Override
     public boolean isValidScore(int homeScore, int awayScore) {
         return homeScore >= 0 && awayScore >= 0;
+    }
+    public boolean isValidSubstitutionCount(int substitutionCount) {
+        return substitutionCount >= 0 && substitutionCount <= getSubstituteLimit();
+    }
+
+    public int determineWinnerSide(int homeScore, int awayScore) {
+        if (!isValidScore(homeScore, awayScore)) {
+            throw new IllegalArgumentException("Scores cannot be negative.");
+        }
+
+        if (homeScore > awayScore) {
+            return 1;
+        }
+
+        if (awayScore > homeScore) {
+            return -1;
+        }
+
+        return 0;
     }
 
     @Override

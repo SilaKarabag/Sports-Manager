@@ -51,7 +51,7 @@ public class MenuOverlay {
             fileChooser.getExtensionFilters().add(
                     new FileChooser.ExtensionFilter("Sports Manager Save File", "*.dat")
             );
-            fileChooser.setInitialFileName("savegame.dat");
+            fileChooser.setInitialFileName("savegame");
 
             File file = fileChooser.showSaveDialog(window.getStage());
 
