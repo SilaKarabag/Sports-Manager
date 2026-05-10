@@ -19,10 +19,6 @@ public class TeamRecord implements Serializable {
         this.team = team;
     }
 
-    /**
-     * Maç bittiğinde çağrılır — istatistikleri ve puanı günceller.
-     * League.java bu metodu "addMatchResult" adıyla çağırıyor.
-     */
     public void addMatchResult(int goalsFor, int goalsAgainst, Sport sport) {
         this.matchesPlayed++;
         this.scored += goalsFor;
@@ -39,6 +35,7 @@ public class TeamRecord implements Serializable {
         this.points += sport.calculatePointsFromScore(goalsFor, goalsAgainst);
     }
 
+    // League.java'daki sıralama algoritmasının beklediği metod
     public int getGoalDifference() {
         return scored - conceded;
     }
