@@ -1,256 +1,267 @@
 package com.team10.ui;
 
-import com.team10.domain.League;
-import com.team10.domain.Match;
-import com.team10.domain.TeamRecord;
-import com.team10.sports.FootballSport;
-import com.team10.sports.VolleyballSport;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
+import com.team10.domain.*;
+import com.team10.sports.*;
+import javafx.beans.property.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import javafx.scene.image.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 
 import java.util.List;
 
-/**
- * BUG FIX 1: Hafta sayısı gösterimi düzeltildi (league.getCurrentWeek() artık doğru)
- * BUG FIX 2: "Season Finished" + nextWeek butonu disable edildi sezon bitince
- * BUG FIX 3: Geçen hafta sonuçları paneli eklendi
- * BUG FIX 4: getSelectedSport() null guard eklendi (load game sonrası)
- * UI: Çok daha zengin ve modern tasarım
- */
 public class LeagueView {
 
-    private final StackPane root;
-    private final Label weekLabel    = new Label();
-    private final Label statusLabel  = new Label();
+    private final BorderPane root;
+    private final StackPane  bgLayer;
+    private final Label weekLabel   = new Label();
+    private final Label statusLabel = new Label();
     private final TableView<TeamRecord> table = new TableView<>();
     private final Button nextWeekBtn = new Button("▶  Play Next Week");
-    private final VBox resultsBox    = new VBox(4);
+    private final VBox resultsBox   = new VBox(4);
+    private final VBox fixtureBox   = new VBox(4);
 
-    private static final double ROW_HEIGHT    = 32;
-    private static final double HEADER_HEIGHT = 35;
+    private static final double ROW_H = 32;
+    private static final double HDR_H = 35;
 
     private final boolean isFootball;
     private final boolean isVolleyball;
 
     public LeagueView(MainWindow window) {
-        // BUG FIX: null guard – load game yapıldıysa sport session'dan gelir
-        var sport = window.getSelectedSport();
+        Sport sport = window.getSelectedSport();
         isFootball   = sport instanceof FootballSport;
         isVolleyball = sport instanceof VolleyballSport;
 
-        root = new StackPane();
+        // Root is BorderPane — fills scene naturally, no binding needed
+        root = new BorderPane();
+        root.setStyle("-fx-background-color: linear-gradient(to bottom right,#0f2027,#203a43,#2c5364);");
 
-        // Background
-        root.setStyle("-fx-background-color: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);");
-
-        ImageView bg = loadBackground(isFootball ? "/images/football.gif" : "/images/volleyball.jpg");
-        if (bg != null) bg.setOpacity(0.18);
+        // Background layer
+        bgLayer = new StackPane();
+        bgLayer.setStyle("-fx-background-color: transparent;");
+        ImageView bg = loadBg(isFootball ? "/images/football.gif" : "/images/volleyball.jpg");
+        if (bg != null) {
+            bg.setOpacity(0.15);
+            bg.setPreserveRatio(false);
+            bg.fitWidthProperty().bind(root.widthProperty());
+            bg.fitHeightProperty().bind(root.heightProperty());
+            bgLayer.getChildren().add(bg);
+        }
 
         // Top bar
-        Button menuBtn = MenuOverlay.createMenuButton(window);
-        HBox topBar = new HBox(menuBtn);
-        topBar.setAlignment(Pos.TOP_RIGHT);
-        topBar.setPadding(new Insets(16));
+        Button helpBtn  = HelpDialog.createHelpButton(window);
+        Button menuBtn  = MenuOverlay.createMenuButton(window);
+        Label  sportTag = new Label(isFootball ? "⚽ FOOTBALL LEAGUE" : "🏐 VOLLEYBALL LEAGUE");
+        sportTag.setStyle("-fx-text-fill:#4fc3f7; -fx-font-size:16px; -fx-font-weight:bold;");
+        Region sp = new Region();
+        HBox.setHgrow(sp, Priority.ALWAYS);
+        HBox topBar = new HBox(8, helpBtn, sportTag, sp, menuBtn);
+        topBar.setAlignment(Pos.CENTER_LEFT);
+        topBar.setPadding(new Insets(12, 16, 4, 16));
 
-        // Week & status labels
-        weekLabel.setStyle("-fx-text-fill: #e0e0e0; -fx-font-size: 22px; -fx-font-weight: bold;");
-        statusLabel.setStyle("-fx-text-fill: #a0c4d8; -fx-font-size: 14px;");
+        weekLabel.setStyle("-fx-text-fill:white; -fx-font-size:22px; -fx-font-weight:bold;");
+        statusLabel.setStyle("-fx-text-fill:#a0c4d8; -fx-font-size:13px;");
 
-        // Table
-        setupTable();
+        setupTable(window);
 
-        // Results panel
-        setupResultsPanel();
-
-        // Next week button
         UIHelper.style(nextWeekBtn);
-        nextWeekBtn.setPrefWidth(220);
-        nextWeekBtn.setPrefHeight(42);
-        nextWeekBtn.setStyle(nextWeekBtn.getStyle()
-                + "-fx-font-size: 15px; -fx-font-weight: bold;");
-
+        nextWeekBtn.setPrefWidth(230);
+        nextWeekBtn.setPrefHeight(44);
         nextWeekBtn.setOnAction(e -> {
-            var controller = window.getController();
-            if (!controller.getLeague().isLeagueFinished()) {
-                controller.playNextWeek();
+            var ctrl = window.getController();
+            if (!ctrl.getLeague().isLeagueFinished()) {
+                ctrl.playNextWeek();
                 updateUI(window);
             }
-            if (controller.getLeague().isLeagueFinished()) {
-                nextWeekBtn.setDisable(true); // BUG FIX: sezon bitti, buton kapat
-                new EndScreen(window, window.getController().getLeague().getSortedStandings()).show();
+            if (ctrl.getLeague().isLeagueFinished()) {
+                nextWeekBtn.setDisable(true);
+                new EndScreen(window, ctrl.getLeague().getSortedStandings()).show();
             }
         });
 
-        // Left column: standings
+        // Left column — takes all spare width
         VBox leftCol = new VBox(10, weekLabel, statusLabel, table, nextWeekBtn);
         leftCol.setAlignment(Pos.TOP_LEFT);
-        leftCol.setPadding(new Insets(20, 10, 20, 20));
-        leftCol.setPrefWidth(560);
+        leftCol.setPadding(new Insets(10, 8, 16, 20));
+        HBox.setHgrow(leftCol, Priority.ALWAYS);
 
-        // Right column: results
-        Label resultsTitle = new Label("Last Week Results");
-        resultsTitle.setStyle("-fx-text-fill: #a0c4d8; -fx-font-size: 16px; -fx-font-weight: bold;");
-        VBox rightCol = new VBox(10, resultsTitle, resultsBox);
-        rightCol.setAlignment(Pos.TOP_LEFT);
-        rightCol.setPadding(new Insets(20, 20, 20, 10));
-        rightCol.setPrefWidth(360);
-        rightCol.setStyle(
-                "-fx-background-color: rgba(0,0,0,0.35);" +
-                        "-fx-background-radius: 12;" +
-                        "-fx-border-color: rgba(255,255,255,0.1);" +
-                        "-fx-border-radius: 12;"
-        );
+        // Right column — fixed width
+        Label resTitle = UIHelper.sectionTitle("📋 Last Week Results");
+        ScrollPane resSP = scrollPane(resultsBox);
+        Label fixTitle = UIHelper.sectionTitle("📅 Upcoming Fixtures");
+        ScrollPane fixSP = scrollPane(fixtureBox);
 
-        HBox mainContent = new HBox(16, leftCol, rightCol);
+        VBox rightCol = new VBox(10, resTitle, resSP, fixTitle, fixSP);
+        rightCol.setPadding(new Insets(12, 14, 14, 10));
+        rightCol.setPrefWidth(270);
+        rightCol.setMinWidth(200);
+        rightCol.setMaxWidth(310);
+        rightCol.setStyle("-fx-background-color:rgba(0,0,0,0.38);-fx-background-radius:12;");
+
+        HBox mainContent = new HBox(10, leftCol, rightCol);
         mainContent.setAlignment(Pos.TOP_LEFT);
-        mainContent.setPadding(new Insets(0, 16, 16, 0));
+        mainContent.setPadding(new Insets(0, 10, 10, 0));
 
-        BorderPane layout = new BorderPane();
-        layout.setTop(topBar);
-        layout.setCenter(mainContent);
+        // Content VBox stacked over background
+        VBox contentVBox = new VBox(0, topBar, mainContent);
+        VBox.setVgrow(mainContent, Priority.ALWAYS);
 
+        StackPane centerPane = new StackPane();
+        if (bg != null) {
+            centerPane.getChildren().addAll(bgLayer, contentVBox);
+        } else {
+            centerPane.getChildren().add(contentVBox);
+        }
+
+        root.setCenter(centerPane);
         updateUI(window);
-
-        if (bg != null) root.getChildren().addAll(bg, layout);
-        else             root.getChildren().add(layout);
     }
 
-    private void setupTable() {
-        String scoredLbl   = isFootball ? "GF" : "Sets W";
-        String concededLbl = isFootball ? "GA" : "Sets L";
+    private ScrollPane scrollPane(VBox content) {
+        ScrollPane sp = new ScrollPane(content);
+        sp.setFitToWidth(true);
+        sp.setPrefHeight(160);
+        sp.setMinHeight(60);
+        sp.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        return sp;
+    }
 
-        TableColumn<TeamRecord, String>  teamCol = col("Team",    320, r -> new SimpleStringProperty(r.getTeam().getName()));
-        TableColumn<TeamRecord, Integer> pCol    = intCol("P",     40, r -> r.getMatchesPlayed());
-        TableColumn<TeamRecord, Integer> wCol    = intCol("W",     40, r -> r.getWins());
-        TableColumn<TeamRecord, Integer> dCol    = intCol("D",     40, r -> r.getDraws());
-        TableColumn<TeamRecord, Integer> lCol    = intCol("L",     40, r -> r.getLosses());
-        TableColumn<TeamRecord, Integer> gfCol   = intCol(scoredLbl, 55, r -> r.getScored());
-        TableColumn<TeamRecord, Integer> gaCol   = intCol(concededLbl, 55, r -> r.getConceded());
-        TableColumn<TeamRecord, Integer> ptsCol  = intCol("Pts",  50, r -> r.getPoints());
+    private void setupTable(MainWindow window) {
+        String gfLbl = isFootball ? "GF" : "SW";
+        String gaLbl = isFootball ? "GA" : "SL";
+
+        TableColumn<TeamRecord, String>  teamCol = new TableColumn<>("Team");
+        TableColumn<TeamRecord, Integer> pCol    = new TableColumn<>("P");
+        TableColumn<TeamRecord, Integer> wCol    = new TableColumn<>("W");
+        TableColumn<TeamRecord, Integer> dCol    = new TableColumn<>("D");
+        TableColumn<TeamRecord, Integer> lCol    = new TableColumn<>("L");
+        TableColumn<TeamRecord, Integer> gfCol   = new TableColumn<>(gfLbl);
+        TableColumn<TeamRecord, Integer> gaCol   = new TableColumn<>(gaLbl);
+        TableColumn<TeamRecord, Integer> ptsCol  = new TableColumn<>("Pts");
+
+        teamCol.setCellValueFactory(d ->
+                new SimpleStringProperty(d.getValue().getTeam().getName()));
+        teamCol.setPrefWidth(160);
+        teamCol.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); setGraphic(null); return; }
+                Label lbl = new Label(item);
+                lbl.setStyle("-fx-text-fill:#80deea; -fx-underline:true; -fx-cursor:hand;");
+                lbl.setOnMouseClicked(e -> {
+                    TeamRecord rec = getTableView().getItems().get(getIndex());
+                    TeamRosterDialog.show(window, rec.getTeam());
+                });
+                setGraphic(lbl); setText(null);
+            }
+        });
+
+        pCol.setCellValueFactory(d -> new SimpleIntegerProperty(d.getValue().getMatchesPlayed()).asObject());
+        wCol.setCellValueFactory(d -> new SimpleIntegerProperty(d.getValue().getWins()).asObject());
+        dCol.setCellValueFactory(d -> new SimpleIntegerProperty(d.getValue().getDraws()).asObject());
+        lCol.setCellValueFactory(d -> new SimpleIntegerProperty(d.getValue().getLosses()).asObject());
+        gfCol.setCellValueFactory(d -> new SimpleIntegerProperty(d.getValue().getScored()).asObject());
+        gaCol.setCellValueFactory(d -> new SimpleIntegerProperty(d.getValue().getConceded()).asObject());
+        ptsCol.setCellValueFactory(d -> new SimpleIntegerProperty(d.getValue().getPoints()).asObject());
+
+        for (TableColumn<?, ?> c : new TableColumn[]{pCol,wCol,dCol,lCol,gfCol,gaCol,ptsCol}) {
+            c.setPrefWidth(44);
+            c.setStyle("-fx-alignment:CENTER;");
+        }
 
         table.getColumns().addAll(teamCol, pCol, wCol, dCol, lCol, gfCol, gaCol, ptsCol);
-
-        // BUG FIX: Voleybolda beraberlik kolonu gösterilmez
         if (isVolleyball) dCol.setVisible(false);
 
-        table.setFixedCellSize(ROW_HEIGHT);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        table.setMouseTransparent(true);
-        table.setFocusTraversable(false);
-        table.setStyle(
-                "-fx-background-color: rgba(0,0,0,0.55);" +
-                        "-fx-control-inner-background: rgba(30,60,80,0.6);" +
-                        "-fx-control-inner-background-alt: rgba(20,45,65,0.6);" +
-                        "-fx-table-cell-border-color: rgba(255,255,255,0.05);" +
-                        "-fx-text-fill: white;"
-        );
-
-        // Satır renkleri
         table.setRowFactory(tv -> new TableRow<>() {
-            @Override
-            protected void updateItem(TeamRecord item, boolean empty) {
+            @Override protected void updateItem(TeamRecord item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setStyle("");
-                } else {
-                    // İlk 3 → altın/gümüş/bronz tonu
-                    int idx = getIndex();
-                    if      (idx == 0) setStyle("-fx-background-color: rgba(255,215,0,0.15);");
-                    else if (idx == 1) setStyle("-fx-background-color: rgba(192,192,192,0.10);");
-                    else if (idx == 2) setStyle("-fx-background-color: rgba(205,127,50,0.10);");
-                    else               setStyle("");
+                if (empty || item == null) { setStyle(""); return; }
+                switch (getIndex()) {
+                    case 0:  setStyle("-fx-background-color:rgba(255,215,0,0.18);"); break;
+                    case 1:  setStyle("-fx-background-color:rgba(192,192,192,0.12);"); break;
+                    case 2:  setStyle("-fx-background-color:rgba(205,127,50,0.12);"); break;
+                    default: setStyle(""); break;
                 }
             }
         });
-    }
 
-    private void setupResultsPanel() {
-        resultsBox.setFillWidth(true);
+        table.setFixedCellSize(ROW_H);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setFocusTraversable(false);
+        table.setStyle(
+                "-fx-background-color:rgba(0,0,0,0.55);" +
+                        "-fx-control-inner-background:rgba(20,45,65,0.6);" +
+                        "-fx-control-inner-background-alt:rgba(15,35,55,0.6);");
     }
 
     private void updateUI(MainWindow window) {
-        var league = window.getController().getLeague();
-
-        // BUG FIX: Doğru hafta gösterimi
-        int displayWeek = Math.min(league.getCurrentWeek(), league.getTotalWeeks());
-        weekLabel.setText("Week " + displayWeek + " / " + league.getTotalWeeks());
-
+        League league = window.getController().getLeague();
         boolean finished = league.isLeagueFinished();
-        statusLabel.setText(finished ? "🏆 Season Finished!" : "⚽ Season Running");
+
+        weekLabel.setText("Week " + league.getCurrentWeek() + " / " + league.getTotalWeeks());
+        statusLabel.setText(finished
+                ? "🏆 Season Finished!"
+                : "⏳ Season in Progress  —  click a team name to view roster");
         nextWeekBtn.setDisable(finished);
 
         table.getItems().setAll(league.getSortedStandings());
-        table.setPrefHeight(HEADER_HEIGHT + table.getItems().size() * ROW_HEIGHT + 2);
+        table.setPrefHeight(HDR_H + table.getItems().size() * ROW_H + 2);
 
-        // Geçen hafta sonuçları
-        updateResultsPanel(league.getLastWeekMatches());
-    }
-
-    private void updateResultsPanel(List<Match> matches) {
         resultsBox.getChildren().clear();
-        if (matches.isEmpty()) {
-            Label none = new Label("No matches played yet.");
-            none.setStyle("-fx-text-fill: #888; -fx-font-size: 13px;");
-            resultsBox.getChildren().add(none);
-            return;
-        }
-        for (Match m : matches) {
-            String score;
-            if (isVolleyball) {
-                score = m.getHomeScore() + " - " + m.getAwayScore() + " sets";
-            } else {
-                score = m.getHomeScore() + " - " + m.getAwayScore();
+        List<Match> last = league.getLastWeekMatches();
+        if (last.isEmpty()) {
+            resultsBox.getChildren().add(noData("No matches played yet."));
+        } else {
+            for (Match m : last) {
+                String score = isVolleyball
+                        ? m.getHomeScore() + "-" + m.getAwayScore() + " sets"
+                        : m.getHomeScore() + "-" + m.getAwayScore();
+                resultsBox.getChildren().add(matchRow(
+                        m.getHomeTeam().getName(), score, m.getAwayTeam().getName(),
+                        m.getHomeScore() > m.getAwayScore(),
+                        m.getHomeScore() < m.getAwayScore()));
             }
-            Label lbl = new Label(m.getHomeTeam().getName() + "  " + score + "  " + m.getAwayTeam().getName());
-            lbl.setStyle("-fx-text-fill: white; -fx-font-size: 12px;" +
-                    "-fx-background-color: rgba(255,255,255,0.06); -fx-background-radius:6;" +
-                    "-fx-padding: 5 8 5 8;");
-            lbl.setMaxWidth(Double.MAX_VALUE);
-            resultsBox.getChildren().add(lbl);
+        }
+
+        fixtureBox.getChildren().clear();
+        if (finished) {
+            fixtureBox.getChildren().add(noData("Season finished."));
+        } else {
+            for (Match m : league.getUpcomingMatches()) {
+                fixtureBox.getChildren().add(matchRow(
+                        m.getHomeTeam().getName(), "vs",
+                        m.getAwayTeam().getName(), false, false));
+            }
         }
     }
 
-    private ImageView loadBackground(String path) {
+    private Label matchRow(String home, String score, String away, boolean hw, boolean aw) {
+        Label l = new Label(home + "  " + score + "  " + away);
+        String col = hw ? "rgba(76,175,80,0.15)"
+                : aw ? "rgba(244,67,54,0.10)"
+                : "rgba(255,255,255,0.06)";
+        l.setStyle("-fx-text-fill:white; -fx-font-size:12px;" +
+                "-fx-background-color:" + col + ";" +
+                "-fx-background-radius:6; -fx-padding:4 8 4 8;");
+        l.setMaxWidth(Double.MAX_VALUE);
+        return l;
+    }
+
+    private Label noData(String msg) {
+        Label l = new Label(msg);
+        l.setStyle("-fx-text-fill:#607d8b; -fx-font-size:12px;");
+        return l;
+    }
+
+    private ImageView loadBg(String path) {
         try {
-            var res = getClass().getResource(path);
-            if (res == null) res = getClass().getResource("/images/football.gif");
-            if (res == null) return null;
-            ImageView iv = new ImageView(new Image(res.toExternalForm()));
-            iv.setFitWidth(950);
-            iv.setFitHeight(650);
-            iv.setPreserveRatio(false);
-            return iv;
+            var r = getClass().getResource(path);
+            if (r == null) r = getClass().getResource("/images/football.gif");
+            if (r == null) return null;
+            return new ImageView(new Image(r.toExternalForm()));
         } catch (Exception e) { return null; }
-    }
-
-    // Helper – generic string column
-    private <T> TableColumn<T, String> col(String title, double width,
-                                           java.util.function.Function<T, SimpleStringProperty> fn) {
-        TableColumn<T, String> c = new TableColumn<>(title);
-        c.setPrefWidth(width);
-        c.setCellValueFactory(d -> fn.apply(d.getValue()));
-        c.setStyle("-fx-alignment: CENTER-LEFT; -fx-text-fill: white;");
-        return c;
-    }
-
-    // Helper – integer column
-    private TableColumn<TeamRecord, Integer> intCol(String title, double width,
-                                                    java.util.function.ToIntFunction<TeamRecord> fn) {
-        TableColumn<TeamRecord, Integer> c = new TableColumn<>(title);
-        c.setPrefWidth(width);
-        c.setCellValueFactory(d -> new SimpleIntegerProperty(fn.applyAsInt(d.getValue())).asObject());
-        c.setStyle("-fx-alignment: CENTER;");
-        return c;
     }
 
     public Parent getRoot() { return root; }

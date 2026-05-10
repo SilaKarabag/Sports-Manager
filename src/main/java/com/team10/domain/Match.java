@@ -4,14 +4,16 @@ import com.team10.sports.Sport;
 import com.team10.sports.VolleyballSport;
 import java.util.Random;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * BUG FIX 1: Voleybolda beraberlik olamaz (3-2 kazanır, beraberlik yok).
- *   Orijinal kod seti eşit bırakabiliyordu.
- * BUG FIX 2: calculateLineupPower null/boş lineup durumunda 10 döndürüyor, güzel.
- * BUG FIX 3: Random her serialization'da yeniden oluşturulmalı (transient).
- * BUG FIX 4: Voleybol için "bestOf" mantığı eklendi – 3 seti kazanan maçı kazanır,
- *   gereksiz setler oynanmaz.
+ * Bir maçı temsil eder.
+ * DÜZELTMELER:
+ * 1) Random transient – serialize sorunu giderildi
+ * 2) Voleybol best-of-5: 3 seti kazanan oyunu bitirir
+ * 3) Taktik bonusu: ATTACKING/DEFENSIVE etkisi var
+ * 4) getQuarterEvents() – UI'da periyot olaylarını göstermek için
  */
 public class Match implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -22,7 +24,7 @@ public class Match implements Serializable {
     private Lineup awayLineup;
     private final Sport sport;
 
-    // Random transient – deserialize sonrasında yeniden init edilir
+    // CRITICAL FIX: Random Serializable değil, transient olmalı
     private transient Random random;
 
     private int homeScore;
@@ -30,17 +32,15 @@ public class Match implements Serializable {
     private int currentQuarter;
     private boolean isFinished;
 
+    // Her periyodun özet olayları (UI için)
+    private final List<String> quarterEvents = new ArrayList<>();
+
     public Match(Team homeTeam, Team awayTeam, Sport sport) {
         if (homeTeam == null || awayTeam == null || sport == null)
             throw new IllegalArgumentException("Teams and Sport cannot be null.");
         this.homeTeam = homeTeam;
         this.awayTeam = awayTeam;
         this.sport    = sport;
-        this.homeScore = 0;
-        this.awayScore = 0;
-        this.currentQuarter = 0;
-        this.isFinished = false;
-        this.random = new Random();
     }
 
     public Match(Team homeTeam, Team awayTeam, Lineup homeLineup, Lineup awayLineup, Sport sport) {
@@ -49,93 +49,108 @@ public class Match implements Serializable {
         this.awayLineup = awayLineup;
     }
 
-    private Random getRandom() {
+    private Random rng() {
         if (random == null) random = new Random();
         return random;
     }
 
     public void playNextQuarter() {
         if (isFinished) throw new IllegalStateException("Match is already finished.");
-
         currentQuarter++;
 
-        int homePower = calculateLineupPower(homeLineup, homeTeam.getCoach());
-        int awayPower = calculateLineupPower(awayLineup, awayTeam.getCoach());
+        int homePower = calculatePower(homeLineup, homeTeam);
+        int awayPower = calculatePower(awayLineup, awayTeam);
+
+        StringBuilder event = new StringBuilder();
 
         if (sport instanceof VolleyballSport) {
-            // BUG FIX: Voleybol – her set kazanan alır, beraberlik YOK.
-            // Gücü yüksek olan seti kazanma şansı daha fazla.
-            int homeRoll = homePower + getRandom().nextInt(40);
-            int awayRoll = awayPower + getRandom().nextInt(40);
-            // Eşitlik durumunda bile birinin kazanması şart (tie-break)
+            // Voleybol: her periyot bir SET – beraberlik YOK
+            int homeRoll = homePower + rng().nextInt(50);
+            int awayRoll = awayPower + rng().nextInt(50);
             if (homeRoll >= awayRoll) {
-                this.homeScore++;
+                homeScore++;
+                event.append("Set ").append(currentQuarter).append(": ")
+                        .append(homeTeam.getName()).append(" wins the set! (")
+                        .append(homeScore).append("-").append(awayScore).append(")");
             } else {
-                this.awayScore++;
+                awayScore++;
+                event.append("Set ").append(currentQuarter).append(": ")
+                        .append(awayTeam.getName()).append(" wins the set! (")
+                        .append(homeScore).append("-").append(awayScore).append(")");
             }
-
-            // BUG FIX: Best-of mantığı – 3 seti kazanan maçı bitirir (5 set üzerinden)
-            int setsToWin = (sport.getQuarterCount() / 2) + 1; // 5 set → 3 kazanınca biter
+            // Best-of-5: 3 set kazanan maçı kazanır
+            int setsToWin = (sport.getQuarterCount() / 2) + 1;
             if (homeScore >= setsToWin || awayScore >= setsToWin) {
                 finishMatch();
             }
         } else {
-            // Futbol / diğer sporlar – gol bazlı
-            int homeGoals = getRandom().nextInt(Math.max(1, (homePower / 25) + 2));
-            int awayGoals = getRandom().nextInt(Math.max(1, (awayPower / 25) + 2));
-            this.homeScore += homeGoals;
-            this.awayScore += awayGoals;
-
+            // Futbol: gol bazlı, 2 yarı
+            int homeGoals = rng().nextInt(Math.max(1, homePower / 25 + 2));
+            int awayGoals = rng().nextInt(Math.max(1, awayPower / 25 + 2));
+            homeScore += homeGoals;
+            awayScore += awayGoals;
+            String half = currentQuarter == 1 ? "1st Half" : "2nd Half";
+            event.append(half).append(": ")
+                    .append(homeTeam.getName()).append(" ").append(homeScore)
+                    .append(" - ").append(awayScore).append(" ")
+                    .append(awayTeam.getName());
+            if (homeGoals > 0)
+                event.append(" (").append(homeTeam.getName()).append(" scored ").append(homeGoals).append(")");
             if (currentQuarter >= sport.getQuarterCount()) {
                 finishMatch();
             }
         }
+
+        quarterEvents.add(event.toString());
     }
 
-    private int calculateLineupPower(Lineup lineup, Coach coach) {
+    /** Taktik dahil güç hesabı */
+    private int calculatePower(Lineup lineup, Team team) {
         if (lineup == null || lineup.getPlayers() == null || lineup.getPlayers().isEmpty())
             return 10;
         int power = 0;
         for (Player p : lineup.getPlayers()) {
             if (p != null) power += p.getSkill();
         }
-        if (coach != null) power += coach.getTrainingBonus();
+        if (team.getCoach() != null) power += team.getCoach().getTrainingBonus();
+
+        // Taktik bonusu
+        String tactic = team.getTactic();
+        if ("ATTACKING".equals(tactic))  power += 15;
+        if ("DEFENSIVE".equals(tactic))  power -= 10;
+
         return Math.max(power, 10);
     }
 
     private void finishMatch() {
-        this.isFinished = true;
+        isFinished = true;
         applyInjuries(homeLineup);
         applyInjuries(awayLineup);
     }
 
     private void applyInjuries(Lineup lineup) {
-        if (lineup == null || lineup.getPlayers() == null) return;
-        for (Player player : lineup.getPlayers()) {
-            if (player != null && getRandom().nextInt(100) < 5) {
-                int duration = getRandom().nextInt(3) + 1;
-                player.injureForMatches(duration);
+        if (lineup == null) return;
+        for (Player p : lineup.getPlayers()) {
+            if (p != null && rng().nextInt(100) < 8) { // %8 sakatlık
+                int dur = rng().nextInt(3) + 1;
+                p.injureForMatches(dur);
+                quarterEvents.add("⚠ " + p.getName() + " injured for " + dur + " match(es)!");
             }
         }
     }
 
-    public String getScoreDisplay() {
-        if (sport instanceof VolleyballSport) {
-            return homeScore + "-" + awayScore + " (sets)";
-        }
-        return homeScore + "-" + awayScore;
-    }
+    public List<String> getQuarterEvents() { return new ArrayList<>(quarterEvents); }
 
     // Getters & Setters
     public void setHomeLineup(Lineup l) { this.homeLineup = l; }
     public void setAwayLineup(Lineup l) { this.awayLineup = l; }
-    public Team  getHomeTeam()    { return homeTeam; }
-    public Team  getAwayTeam()    { return awayTeam; }
-    public Sport getSport()       { return sport; }
-    public int   getHomeScore()   { return homeScore; }
-    public int   getAwayScore()   { return awayScore; }
-    public int   getCurrentQuarter() { return currentQuarter; }
-    public boolean isFinished()   { return isFinished; }
-    public Lineup getHomeLineup() { return homeLineup; }
-    public Lineup getAwayLineup() { return awayLineup; }
+    public Team    getHomeTeam()    { return homeTeam; }
+    public Team    getAwayTeam()    { return awayTeam; }
+    public Sport   getSport()       { return sport; }
+    public int     getHomeScore()   { return homeScore; }
+    public int     getAwayScore()   { return awayScore; }
+    public int     getCurrentQuarter() { return currentQuarter; }
+    public boolean isFinished()     { return isFinished; }
+    public Lineup  getHomeLineup()  { return homeLineup; }
+    public Lineup  getAwayLineup()  { return awayLineup; }
 }
