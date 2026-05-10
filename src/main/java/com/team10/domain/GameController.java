@@ -1,111 +1,86 @@
 package com.team10.domain;
+
 import com.team10.persistence.SaveManager;
 import com.team10.sports.Sport;
-import java.util.List;
-import java.io.Serializable;
 import java.io.IOException;
-
+import java.io.Serializable;
+import java.util.List;
 
 /**
- * Kullanıcı arayüzü (UI) ile iş mantığı (Domain) arasındaki ana köprüdür.
+ * BUG FIX 1: saveGame/loadGame IOException/ClassNotFoundException catch'lenmiyor,
+ *   caller'a fırlatılıyor – doğru, UI handle ediyor.
+ *
+ * BUG FIX 2: startNewGame'de sport null kontrolüne ek olarak teams.size()<2 kontrolü eklendi.
+ *   2'den az takımla lig kurulamazdı.
+ *
+ * BUG FIX 3: getSelectedSport – UI MainWindow'da selectedSport tutuyor ama
+ *   GameController bu bilgiyi bilmiyor. GameSession üzerinden erişim eklendi.
  */
 public class GameController implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private GameSession session;
 
-    public GameSession getSession() {
-        return session;
-    }
+    public GameSession getSession() { return session; }
 
-    /**
-     * Kaydedilmiş bir oyunu (Session) sisteme yükler.
-     * UI tarafında SaveManager kullanıldıktan sonra çağrılır.
-     */
     public void loadSession(GameSession session) {
-        if (session == null) {
-            throw new IllegalArgumentException("GameSession cannot be null.");
-        }
+        if (session == null) throw new IllegalArgumentException("GameSession cannot be null.");
         this.session = session;
     }
-    /**
-     * Mevcut oyun oturumunu dosyaya kaydeder.
-     */
+
     public void saveGame(String filePath) throws IOException {
         ensureSession();
-
-        SaveManager saveManager = new SaveManager();
-        saveManager.save(session, filePath);
+        new SaveManager().save(session, filePath);
     }
 
-    /**
-     * Dosyadan kaydedilmiş oyun oturumunu yükler.
-     */
     public void loadGame(String filePath) throws IOException, ClassNotFoundException {
-        SaveManager saveManager = new SaveManager();
-
-        GameSession loadedSession = saveManager.load(filePath);
-        loadSession(loadedSession);
+        GameSession loaded = new SaveManager().load(filePath);
+        loadSession(loaded);
     }
 
-    /**
-     * Yeni bir oyun oturumu başlatır.
-     * @param sport Seçilen spor dalı (Football veya Volleyball)
-     * @param teams Ligde yer alacak takımlar
-     */
     public void startNewGame(Sport sport, List<Team> teams) {
-        if (sport == null || teams == null || teams.isEmpty()) {
-            throw new IllegalArgumentException("Sport and Teams must be valid to start a game.");
-        }
+        if (sport == null) throw new IllegalArgumentException("Sport cannot be null.");
+        if (teams == null || teams.size() < 2)
+            throw new IllegalArgumentException("At least 2 teams are required.");
 
         this.session = new GameSession();
         this.session.setSport(sport);
 
-        // Yeni bir lig oluştur ve fikstürü hazırla
         League league = new League(teams, sport);
-
         this.session.setLeague(league);
         this.session.startSeason();
     }
 
-    /**
-     * Kullanıcının yöneteceği takımı seçer.
-     */
     public void selectTeam(Team team) {
         ensureSession();
         session.setManagedTeam(team);
     }
 
-    /**
-     * Ligde bir sonraki haftanın maçlarını oynatır.
-     */
     public void playNextWeek() {
         ensureSession();
         session.advanceWeek();
     }
 
-    /**
-     * Mevcut lig durumunu döner.
-     */
     public League getLeague() {
         ensureSession();
         return session.getLeague();
     }
 
-    /**
-     * Kullanıcının yönettiği takımı döner.
-     */
     public Team getManagedTeam() {
         ensureSession();
         return session.getManagedTeam();
     }
 
-    /**
-     * Oturumun (Session) başlatılıp başlatılmadığını kontrol eder.
-     */
+    /** BUG FIX: Sport'a UI katmanının direkt erişimi için eklendi */
+    public Sport getSport() {
+        ensureSession();
+        return session.getSport();
+    }
+
+    public boolean hasActiveSession() { return session != null; }
+
     private void ensureSession() {
-        if (session == null) {
-            throw new IllegalStateException("Game session has not been initialized. Start a new game or load a save.");
-        }
+        if (session == null)
+            throw new IllegalStateException("Game session not initialized. Start or load a game first.");
     }
 }

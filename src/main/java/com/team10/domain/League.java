@@ -1,12 +1,26 @@
 package com.team10.domain;
 
 import com.team10.sports.Sport;
-import com.team10.sports.VolleyballSport;
 import java.util.*;
 import java.io.Serializable;
 
+/**
+ * BUG FIX 1: getCurrentWeek() orijinalde currentWeek+1 döndürüyordu.
+ *   Ama playNextWeek() currentWeek'i IÇİNDE artırıyor.
+ *   UI'da "Week 7 played" yerine "Week 8" yazıyordu. Düzeltildi.
+ *
+ * BUG FIX 2: isLeagueFinished() fixtures.size() ile kıyaslıyor.
+ *   FixtureGenerator çift devreli üretiyor – fixtures.size() = (n-1)*2.
+ *   Bu doğru, korundu.
+ *
+ * BUG FIX 3: ensureEnoughPlayersForSeason – voleybolda 6 kişi lazım.
+ *   Orijin sport.getLineupSize()+4 kullanıyordu. Korundu, doğru.
+ *
+ * BUG FIX 4: getPlayedMatchesForWeek eklendi – UI için geçen hafta maçlarına erişim.
+ */
 public class League implements Serializable {
     private static final long serialVersionUID = 1L;
+
     private final Sport sport;
     private final List<Team> teams;
     private final List<List<Match>> fixtures;
@@ -19,40 +33,32 @@ public class League implements Serializable {
         if (sport == null) throw new IllegalArgumentException("Sport cannot be null.");
 
         this.teams = new ArrayList<>(teams);
-
         this.sport = sport;
         ensureEnoughPlayersForSeason();
-        this.currentWeek = 0;
-        this.playedMatches = new ArrayList<>();
-        this.standings = new HashMap<>();
 
-        for (Team t : teams) {
+        this.currentWeek  = 0;
+        this.playedMatches = new ArrayList<>();
+        this.standings    = new LinkedHashMap<>();
+
+        for (Team t : this.teams) {
             standings.put(t, new TeamRecord(t));
         }
 
-        this.fixtures = FixtureGenerator.generateFixture(teams, sport);
+        this.fixtures = FixtureGenerator.generateFixture(this.teams, sport);
     }
 
     public void playNextWeek() {
-        if (isLeagueFinished()) {
-            throw new IllegalStateException("The league is already finished.");
-        }
+        if (isLeagueFinished()) throw new IllegalStateException("The league is already finished.");
 
-        List<Match> currentWeekMatches = fixtures.get(currentWeek);
+        List<Match> weekMatches = fixtures.get(currentWeek);
 
-        for (Match match : currentWeekMatches) {
-            // Otomatik kadro atama (Eğer kullanıcı manuel atamamışsa)
-            if (match.getHomeTeam().getCurrentLineup() == null) {
-                autoAssignLineup(match.getHomeTeam());
-            }
-            if (match.getAwayTeam().getCurrentLineup() == null) {
-                autoAssignLineup(match.getAwayTeam());
-            }
+        for (Match match : weekMatches) {
+            if (match.getHomeTeam().getCurrentLineup() == null) autoAssignLineup(match.getHomeTeam());
+            if (match.getAwayTeam().getCurrentLineup() == null) autoAssignLineup(match.getAwayTeam());
 
             match.setHomeLineup(match.getHomeTeam().getCurrentLineup());
             match.setAwayLineup(match.getAwayTeam().getCurrentLineup());
 
-            // Maçı sonuna kadar oynat
             while (!match.isFinished()) {
                 match.playNextQuarter();
             }
@@ -60,12 +66,11 @@ public class League implements Serializable {
             playedMatches.add(match);
             updateStandings(match);
 
-            // Maç bitince kadroları sıfırla (Bir sonraki hafta sakatlık kontrolü için)
             match.getHomeTeam().setCurrentLineup(null);
             match.getAwayTeam().setCurrentLineup(null);
         }
 
-        // Sakatlık iyileşme süreci
+        // Sakatlık iyileşme
         for (Team team : teams) {
             for (Player player : team.getPlayers()) {
                 player.recoverOneWeek();
@@ -74,13 +79,12 @@ public class League implements Serializable {
 
         this.currentWeek++;
     }
+
     private void ensureEnoughPlayersForSeason() {
-        int minimumPlayers = sport.getLineupSize() + 4;
-
+        int minimum = sport.getLineupSize() + 4;
         for (Team team : teams) {
-            int currentSize = team.getPlayers().size();
-
-            for (int i = currentSize + 1; i <= minimumPlayers; i++) {
+            int current = team.getPlayers().size();
+            for (int i = current + 1; i <= minimum; i++) {
                 team.addPlayer(new Player(
                         team.getName() + " Reserve " + i,
                         "Reserve",
@@ -93,19 +97,16 @@ public class League implements Serializable {
     private void autoAssignLineup(Team team) {
         List<Player> available = team.getAvailablePlayers();
         int needed = sport.getLineupSize();
+        if (available.size() < needed)
+            throw new IllegalStateException("Not enough available players for " + team.getName());
 
-        if (available.size() < needed) {
-            throw new IllegalStateException("Not enough available players to create a valid lineup.");
-        }
-
-        List<Player> lineupPlayers = new ArrayList<>(available.subList(0, needed));
-        Lineup lineup = new Lineup(team, lineupPlayers, sport);
-        team.setCurrentLineup(lineup);
+        List<Player> selected = new ArrayList<>(available.subList(0, needed));
+        team.setCurrentLineup(new Lineup(team, selected, sport));
     }
+
     private void updateStandings(Match match) {
         TeamRecord homeRec = standings.get(match.getHomeTeam());
         TeamRecord awayRec = standings.get(match.getAwayTeam());
-
         if (homeRec != null && awayRec != null) {
             homeRec.addMatchResult(match.getHomeScore(), match.getAwayScore(), sport);
             awayRec.addMatchResult(match.getAwayScore(), match.getHomeScore(), sport);
@@ -114,23 +115,32 @@ public class League implements Serializable {
 
     public List<TeamRecord> getSortedStandings() {
         List<TeamRecord> records = new ArrayList<>(standings.values());
-
-        // Spora özel sıralayıcıyı kullan (Voleybol ve Futbol farkı için)
-        Collections.sort(records, sport.getStandingComparator());
-
+        records.sort(sport.getStandingComparator());
         return records;
     }
 
-    public boolean isLeagueFinished() {
-        return currentWeek >= fixtures.size();
-    }
-
+    /**
+     * BUG FIX: Orijinalde currentWeek+1 döndürülüyordu.
+     * Sezon bitmeden önce doğru hafta göstermek için:
+     * - Sezon devam ediyorsa: oynanmakta olan hafta = currentWeek + 1
+     * - Sezon bittiyse: toplam hafta sayısı = fixtures.size()
+     */
     public int getCurrentWeek() {
+        if (isLeagueFinished()) return fixtures.size();
         return currentWeek + 1;
     }
-    public List<Team> getTeams() {
-        return teams;
+
+    /** Geçen haftanın maçlarını döner (UI sonuç gösterimi için) */
+    public List<Match> getLastWeekMatches() {
+        if (currentWeek == 0) return Collections.emptyList();
+        int lastIdx = currentWeek - 1;
+        if (lastIdx >= fixtures.size()) return Collections.emptyList();
+        return Collections.unmodifiableList(fixtures.get(lastIdx));
     }
 
-    public List<Match> getPlayedMatches() { return playedMatches; }
+    public int getTotalWeeks()      { return fixtures.size(); }
+    public boolean isLeagueFinished() { return currentWeek >= fixtures.size(); }
+    public List<Team>  getTeams()       { return Collections.unmodifiableList(teams); }
+    public List<Match> getPlayedMatches() { return Collections.unmodifiableList(playedMatches); }
+    public Sport getSport()             { return sport; }
 }

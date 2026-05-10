@@ -1,6 +1,5 @@
 package com.team10.ui;
 
-import java.io.File;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -14,104 +13,87 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
+import java.io.File;
+
+/**
+ * BUG FIX: Orijinalde saveButton handler'ı hasActiveSession() kontrolü yapmıyordu.
+ * MainMenu'den açılırsa (session yok) saveGame() → IllegalStateException.
+ * FIX: hasActiveSession() kontrolü eklendi.
+ */
 public class MenuOverlay {
 
     public static Button createMenuButton(MainWindow window) {
-        Button menuButton = new Button("☰");
-        UIHelper.style(menuButton);
-        menuButton.setPrefWidth(45);
-        menuButton.setPrefHeight(36);
-        menuButton.setOnAction(e -> showMenu(window));
-        return menuButton;
+        Button btn = new Button("☰");
+        UIHelper.style(btn);
+        btn.setPrefWidth(45);
+        btn.setPrefHeight(36);
+        btn.setOnAction(e -> showMenu(window));
+        return btn;
     }
 
     private static void showMenu(MainWindow window) {
-        Stage menuStage = new Stage();
-        menuStage.initOwner(window.getStage());
-        menuStage.initModality(Modality.APPLICATION_MODAL);
-        menuStage.initStyle(StageStyle.TRANSPARENT);
+        Stage menu = new Stage();
+        menu.initOwner(window.getStage());
+        menu.initModality(Modality.APPLICATION_MODAL);
+        menu.initStyle(StageStyle.TRANSPARENT);
 
-        Button returnButton = new Button("Return");
-        Button saveButton = new Button("Save Game");
-        Button mainMenu = new Button("Main Menu");
-        Button sound = new Button(AudioManager.getSoundText());
-        Button quit = new Button("Quit");
+        Button returnBtn = new Button("↩  Return");
+        Button saveBtn   = new Button("💾  Save Game");
+        Button mainMenu  = new Button("🏠  Main Menu");
+        Button soundBtn  = new Button(AudioManager.getSoundText());
+        Button quit      = new Button("✖  Quit");
 
-        UIHelper.style(returnButton);
-        UIHelper.style(saveButton);
-        UIHelper.style(mainMenu);
-        UIHelper.style(sound);
-        UIHelper.style(quit);
+        for (Button b : new Button[]{returnBtn, saveBtn, mainMenu, soundBtn, quit}) UIHelper.style(b);
 
-        returnButton.setOnAction(e -> menuStage.close());
+        // BUG FIX: session yoksa save butonu devre dışı
+        saveBtn.setDisable(!window.getController().hasActiveSession());
 
-        saveButton.setOnAction(e -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Save Game");
-            fileChooser.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("Sports Manager Save File", "*.dat")
-            );
-            fileChooser.setInitialFileName("savegame");
+        returnBtn.setOnAction(e -> menu.close());
 
-            File file = fileChooser.showSaveDialog(window.getStage());
-
+        saveBtn.setOnAction(e -> {
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Save Game");
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Save File", "*.dat"));
+            fc.setInitialFileName("savegame");
+            File file = fc.showSaveDialog(window.getStage());
             if (file != null) {
                 try {
                     window.getController().saveGame(file.getAbsolutePath());
-                    showInfo("Game Saved", "The game was saved successfully.");
-                    menuStage.close();
+                    showAlert(Alert.AlertType.INFORMATION, "Saved", "Game saved successfully.");
+                    menu.close();
                 } catch (Exception ex) {
-                    showError("Save Failed", "The game could not be saved.");
-                    ex.printStackTrace();
+                    showAlert(Alert.AlertType.ERROR, "Save Failed", ex.getMessage());
                 }
             }
         });
 
-        mainMenu.setOnAction(e -> {
-            AudioManager.stopBGM();
-            menuStage.close();
-            window.showMainMenu();
-        });
+        mainMenu.setOnAction(e -> { AudioManager.stopBGM(); menu.close(); window.showMainMenu(); });
 
-        sound.setOnAction(e -> {
+        soundBtn.setOnAction(e -> {
             AudioManager.toggleSound();
-            sound.setText(AudioManager.getSoundText());
+            soundBtn.setText(AudioManager.getSoundText());
         });
 
         quit.setOnAction(e -> Platform.exit());
 
-        VBox root = new VBox(15, returnButton, saveButton, mainMenu, sound, quit);
+        VBox root = new VBox(12, returnBtn, saveBtn, mainMenu, soundBtn, quit);
         root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(25));
-
-        // MENÜ TASARIMI - LACİVERT GEÇİŞLİ VE NET BEYAZ ÇERÇEVELİ
+        root.setPadding(new Insets(28));
         root.setStyle(
-                "-fx-background-color: rgba(15, 32, 39, 0.95);" +
-                        "-fx-border-color: white;" +
-                        "-fx-border-width: 1.5;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-border-radius: 10;"
+                "-fx-background-color: rgba(10,20,30,0.97);" +
+                        "-fx-border-color: rgba(255,255,255,0.4);" +
+                        "-fx-border-width: 1.5; -fx-background-radius: 12; -fx-border-radius: 12;"
         );
 
-        Scene scene = new Scene(root, 280, 380);
+        Scene scene = new Scene(root, 260, 340);
         scene.setFill(Color.TRANSPARENT);
-
-        menuStage.setScene(scene);
-        menuStage.showAndWait();
-    }
-    private static void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
+        menu.setScene(scene);
+        menu.showAndWait();
     }
 
-    private static void showError(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
+    private static void showAlert(Alert.AlertType type, String title, String msg) {
+        Alert a = new Alert(type);
+        a.setTitle(title); a.setHeaderText(title); a.setContentText(msg);
+        a.showAndWait();
     }
 }
