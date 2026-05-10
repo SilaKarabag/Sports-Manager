@@ -45,10 +45,10 @@ public class LeagueView {
         root = new StackPane();
         BorderPane layout = new BorderPane();
 
-        var bg = createBackground(getSportBackground());
+        ImageView bg = createBackground(getSportBackground());
 
         root.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);"
+                "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);"
         );
 
         weekLabel.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
@@ -73,7 +73,9 @@ public class LeagueView {
                 updateUI(window);
             }
 
-            showEndScreenIfFinished(window);
+            if (controller.getLeague().isLeagueFinished()) {
+                new EndScreen(window, window.getController().getLeague().getSortedStandings()).show();
+            }
         });
 
         VBox content = new VBox(12, weekLabel, statusLabel, table, nextWeek);
@@ -97,31 +99,6 @@ public class LeagueView {
         return "/images/volleyball.jpg";
     }
 
-    private StackPane createBackground(String path) {
-
-        StackPane pane = new StackPane();
-
-        var resource = getClass().getResource(path);
-
-        if (resource == null) {
-            pane.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);"
-            );
-            return pane;
-        }
-
-        Image img = new Image(resource.toExternalForm());
-        ImageView view = new ImageView(img);
-
-        view.setFitWidth(900);
-        view.setFitHeight(600);
-        view.setPreserveRatio(false);
-
-        pane.getChildren().add(view);
-
-        return pane;
-    }
-
     private void setupTable() {
 
         String scoredLabel = footballMode ? "GF" : "PF";
@@ -137,39 +114,39 @@ public class LeagueView {
         TableColumn<TeamRecord, Integer> ptsCol = new TableColumn<>("Pts");
 
         teamCol.setCellValueFactory(d ->
-            new SimpleStringProperty(d.getValue().getTeam().getName())
+                new SimpleStringProperty(d.getValue().getTeam().getName())
         );
 
         pCol.setCellValueFactory(d ->
-            new SimpleIntegerProperty(d.getValue().getMatchesPlayed()).asObject()
+                new SimpleIntegerProperty(d.getValue().getMatchesPlayed()).asObject()
         );
 
         wCol.setCellValueFactory(d ->
-            new SimpleIntegerProperty(d.getValue().getWins()).asObject()
+                new SimpleIntegerProperty(d.getValue().getWins()).asObject()
         );
 
         dCol.setCellValueFactory(d ->
-            new SimpleIntegerProperty(d.getValue().getDraws()).asObject()
+                new SimpleIntegerProperty(d.getValue().getDraws()).asObject()
         );
 
         lCol.setCellValueFactory(d ->
-            new SimpleIntegerProperty(d.getValue().getLosses()).asObject()
+                new SimpleIntegerProperty(d.getValue().getLosses()).asObject()
         );
 
         gfCol.setCellValueFactory(d ->
-            new SimpleIntegerProperty(d.getValue().getScored()).asObject()
+                new SimpleIntegerProperty(d.getValue().getScored()).asObject()
         );
 
         gaCol.setCellValueFactory(d ->
-            new SimpleIntegerProperty(d.getValue().getConceded()).asObject()
+                new SimpleIntegerProperty(d.getValue().getConceded()).asObject()
         );
 
         ptsCol.setCellValueFactory(d ->
-            new SimpleIntegerProperty(d.getValue().getPoints()).asObject()
+                new SimpleIntegerProperty(d.getValue().getPoints()).asObject()
         );
 
         table.getColumns().addAll(
-            teamCol, pCol, wCol, dCol, lCol, gfCol, gaCol, ptsCol
+                teamCol, pCol, wCol, dCol, lCol, gfCol, gaCol, ptsCol
         );
 
         if (volleyballMode) {
@@ -190,11 +167,11 @@ public class LeagueView {
         table.setFocusTraversable(false);
 
         table.setStyle(
-            "-fx-background-color: rgba(0,0,0,0.55);" +
-                "-fx-control-inner-background: rgba(255,255,255,0.10);" +
-                "-fx-control-inner-background-alt: rgba(255,255,255,0.08);" +
-                "-fx-table-cell-border-color: rgba(0,0,0,0.25);" +
-                "-fx-table-header-border-color: rgba(255,255,255,0.25);"
+                "-fx-background-color: rgba(0,0,0,0.55);" +
+                        "-fx-control-inner-background: rgba(255,255,255,0.10);" +
+                        "-fx-control-inner-background-alt: rgba(255,255,255,0.08);" +
+                        "-fx-table-cell-border-color: rgba(0,0,0,0.25);" +
+                        "-fx-table-header-border-color: rgba(255,255,255,0.25);"
         );
     }
 
@@ -203,26 +180,24 @@ public class LeagueView {
         var league = window.getController().getLeague();
 
         weekLabel.setText(
-            "Week: " + Math.min(
-                league.getCurrentWeek(),
-                league.getTeams().size() * 2
-            )
+                "Week: " + Math.min(
+                        league.getCurrentWeek(),
+                        league.getTeams().size() * 2
+                )
         );
 
         statusLabel.setText(
-            league.isLeagueFinished()
-                ? "Season Finished"
-                : "Season Running"
+                league.isLeagueFinished()
+                        ? "Season Finished"
+                        : "Season Running"
         );
 
         table.getItems().setAll(league.getSortedStandings());
 
         table.setPrefHeight(
-            HEADER_HEIGHT + table.getItems().size() * ROW_HEIGHT
+                HEADER_HEIGHT + table.getItems().size() * ROW_HEIGHT
         );
     }
-
-    public Parent getRoot() { return root; }
 
     private ImageView createBackground(String path) {
         try {
@@ -243,6 +218,7 @@ public class LeagueView {
             bg.setPreserveRatio(false);
             bg.setOpacity(0.4);
             return bg;
+
         } catch (Exception e) {
             return new ImageView();
         }
