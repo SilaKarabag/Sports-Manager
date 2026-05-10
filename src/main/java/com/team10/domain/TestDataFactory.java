@@ -5,6 +5,7 @@ import com.team10.sports.Sport;
 import com.team10.sports.VolleyballSport;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -32,7 +33,11 @@ public class TestDataFactory {
 
     private static int teamIdx = 0;
 
-    public static void reset() { teamIdx = 0; }
+    //actually shuffles team names now
+    public static void reset() {
+        teamIdx = 0;
+        Collections.shuffle(TEAM_NAMES);
+    }
 
     public static Team createTeam(Sport sport) {
         String name = teamIdx < TEAM_NAMES.size() ? TEAM_NAMES.get(teamIdx) : "Team " + (teamIdx + 1);
