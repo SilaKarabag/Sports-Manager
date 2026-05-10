@@ -1,6 +1,7 @@
 package com.team10.ui;
 
 import com.team10.domain.GameController;
+import com.team10.sports.Sport;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -9,6 +10,8 @@ public class MainWindow {
     private final Stage stage;
 
     private final GameController controller;
+
+    private Sport selectedSport;
 
     public MainWindow(Stage stage){
 
@@ -55,4 +58,13 @@ public class MainWindow {
 
         stage.setScene(new Scene(view.getRoot()));
     }
+
+    public void setSelectedSport(Sport sport) {
+        this.selectedSport = sport;
+    }
+
+    public Sport getSelectedSport() {
+        return selectedSport;
+    }
+
 }

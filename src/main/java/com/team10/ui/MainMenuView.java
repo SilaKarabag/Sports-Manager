@@ -17,7 +17,7 @@ public class MainMenuView {
         root = new BorderPane();
 
         root.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);"
+            "-fx-background-color: linear-gradient(to bottom, #3a3f44, #4f7a5e, #3a3f44);"
         );
 
         Label title = new Label("SPORTS MANAGER");
