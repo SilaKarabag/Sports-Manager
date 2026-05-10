@@ -222,17 +222,29 @@ public class LeagueView {
         );
     }
 
-    private void showEndScreenIfFinished(MainWindow window) {
+    public Parent getRoot() { return root; }
 
-        var league = window.getController().getLeague();
+    private ImageView createBackground(String path) {
+        try {
+            var resource = getClass().getResource(path);
 
-        if (league.isLeagueFinished()) {
-            nextWeek.setDisable(true);
+            if (resource == null) {
+                resource = getClass().getResource("/images/football.gif");
+            }
 
-            new EndScreen(
-                window,
-                league.getSortedStandings()
-            ).show();
+            if (resource == null) {
+                return new ImageView();
+            }
+
+            Image image = new Image(resource.toExternalForm());
+            ImageView bg = new ImageView(image);
+            bg.setFitWidth(900);
+            bg.setFitHeight(600);
+            bg.setPreserveRatio(false);
+            bg.setOpacity(0.4);
+            return bg;
+        } catch (Exception e) {
+            return new ImageView();
         }
     }
 

@@ -1,8 +1,10 @@
 package com.team10.domain;
-
+import com.team10.persistence.SaveManager;
 import com.team10.sports.Sport;
 import java.util.List;
 import java.io.Serializable;
+import java.io.IOException;
+
 
 /**
  * Kullanıcı arayüzü (UI) ile iş mantığı (Domain) arasındaki ana köprüdür.
@@ -25,6 +27,25 @@ public class GameController implements Serializable {
             throw new IllegalArgumentException("GameSession cannot be null.");
         }
         this.session = session;
+    }
+    /**
+     * Mevcut oyun oturumunu dosyaya kaydeder.
+     */
+    public void saveGame(String filePath) throws IOException {
+        ensureSession();
+
+        SaveManager saveManager = new SaveManager();
+        saveManager.save(session, filePath);
+    }
+
+    /**
+     * Dosyadan kaydedilmiş oyun oturumunu yükler.
+     */
+    public void loadGame(String filePath) throws IOException, ClassNotFoundException {
+        SaveManager saveManager = new SaveManager();
+
+        GameSession loadedSession = saveManager.load(filePath);
+        loadSession(loadedSession);
     }
 
     /**

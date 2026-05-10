@@ -1,0 +1,46 @@
+SPORTS MANAGER - PACKAGING CHECKLIST
+
+Member 3 Packaging Verification
+
+1. Maven Build
+Command:
+mvn clean package
+
+Expected result:
+Build Success
+
+2. Unit Tests
+Command:
+mvn clean test
+
+Expected result:
+All tests pass.
+
+3. JavaFX Run
+Command:
+mvn javafx:run
+
+Expected result:
+Application opens successfully.
+
+4. Save/Load Test
+Steps:
+- Start a new game.
+- Play at least one week.
+- Open menu.
+- Click Save Game.
+- Save the file as savegame.dat.
+- Return to main menu.
+- Click Load Game.
+- Select savegame.dat.
+
+Expected result:
+The previous game state is restored.
+
+5. Windows Delivery
+Expected files:
+- Installer or packaged application
+- Built JAR file
+- User manual
+- Final report
+- TPS spreadsheet

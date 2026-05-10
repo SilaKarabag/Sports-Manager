@@ -1,0 +1,27 @@
+SPORTS MANAGER - USER MANUAL
+
+1. Starting the Application
+Run the application and wait for the main menu to appear.
+
+2. Starting a New Game
+Click "Start Game".
+Choose Football or Volleyball.
+The system generates teams, players, fixtures, and league standings.
+
+3. Playing the Season
+Click "Play Next Week" to simulate the next fixture week.
+The league table is updated after each simulated week.
+
+4. Saving the Game
+During the game, click the menu button.
+Choose "Save Game".
+Select a save location and save the file as .dat.
+
+5. Loading the Game
+From the main menu, click "Load Game".
+Select a previously saved .dat file.
+The application restores the saved league state.
+
+6. Ending the Season
+Continue playing weeks until the league is finished.
+The final standings screen displays the result.
