@@ -2,6 +2,7 @@ package com.team10.ui;
 
 import com.team10.sports.FootballSport;
 import com.team10.sports.Sport;
+import com.team10.sports.VolleyballSport;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -27,7 +28,7 @@ public class SportSelectionView {
         root = new BorderPane();
 
         root.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);"
+            "-fx-background-color: linear-gradient(to bottom, #3a3f44, #4f7a5e, #3a3f44);"
         );
 
         Label title = new Label("SELECT SPORT");
@@ -41,13 +42,15 @@ public class SportSelectionView {
         Button football = new Button("Football");
         Button volleyball = new Button("Volleyball");
 
-        volleyball.setDisable(true);
-
         UIHelper.style(football);
         UIHelper.style(volleyball);
 
         football.setOnAction(e ->
             startGame(window, new FootballSport())
+        );
+
+        volleyball.setOnAction(e ->
+            startGame(window, new VolleyballSport())
         );
 
         HBox sportButtons = new HBox(
@@ -87,13 +90,13 @@ public class SportSelectionView {
             )
         );
 
-/*
+
         Image volleyballGif = new Image(
             getClass().getResourceAsStream(
                 "/images/volleyball.jpg"
             )
         );
-*/
+
         StackPane previewPane = new StackPane(
             previewBox,
             previewGif
@@ -128,7 +131,7 @@ public class SportSelectionView {
             );
         });
 
-/*
+
         volleyball.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
 
             previewGif.setImage(volleyballGif);
@@ -148,7 +151,7 @@ public class SportSelectionView {
                 "Hover over a sport"
             );
         });
-*/
+
         VBox center = new VBox(
             25,
             title,
@@ -181,6 +184,8 @@ public class SportSelectionView {
             com.team10.domain.TestDataFactory.createTeam(),
             com.team10.domain.TestDataFactory.createTeam()
         );
+
+        window.setSelectedSport(sport);
 
         window.getController().startNewGame(
             sport,
