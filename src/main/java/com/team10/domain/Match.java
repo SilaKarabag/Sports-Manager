@@ -1,10 +1,11 @@
 package com.team10.domain;
 
 import com.team10.sports.Sport;
+import com.team10.sports.VolleyballSport; // Bu import kritik, sakın unutma
 import java.util.Random;
 import java.io.Serializable;
 
-public class Match implements Serializable{
+public class Match implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final Team homeTeam;
@@ -20,30 +21,11 @@ public class Match implements Serializable{
     private int currentQuarter;
     private boolean isFinished;
 
-    // Constructor Güncellendi: Artık Lineup parametrelerini alıyor
-    public Match(Team homeTeam, Team awayTeam, Lineup homeLineup, Lineup awayLineup, Sport sport) {
-        if (homeTeam == null || awayTeam == null || homeLineup == null || awayLineup == null) {
-            throw new IllegalArgumentException("Teams and Lineups cannot be null.");
-        }
-        if (homeTeam.equals(awayTeam)) {
-            throw new IllegalArgumentException("A team cannot play against itself.");
-        }
-        if (sport == null) {
-            throw new IllegalArgumentException("Sport cannot be null.");
-        }
-
-        this.homeTeam = homeTeam;
-        this.awayTeam = awayTeam;
-        this.homeLineup = homeLineup;
-        this.awayLineup = awayLineup;
-        this.sport = sport;
-        this.homeScore = 0;
-        this.awayScore = 0;
-        this.currentQuarter = 0;
-        this.isFinished = false;
-    }
-    // Fikstür oluşturulurken kullanılacak "hafif" constructor
+    // Fikstür oluşturulurken kullanılacak ana constructor
     public Match(Team homeTeam, Team awayTeam, Sport sport) {
+        if (homeTeam == null || awayTeam == null || sport == null) {
+            throw new IllegalArgumentException("Teams and Sport cannot be null.");
+        }
         this.homeTeam = homeTeam;
         this.awayTeam = awayTeam;
         this.sport = sport;
@@ -51,9 +33,15 @@ public class Match implements Serializable{
         this.awayScore = 0;
         this.currentQuarter = 0;
         this.isFinished = false;
-        // Kadrolar maç başlayana kadar null kalabilir veya boş atanabilir
         this.homeLineup = null;
         this.awayLineup = null;
+    }
+
+    // Maç oynatılırken kullanılacak tam constructor
+    public Match(Team homeTeam, Team awayTeam, Lineup homeLineup, Lineup awayLineup, Sport sport) {
+        this(homeTeam, awayTeam, sport);
+        this.homeLineup = homeLineup;
+        this.awayLineup = awayLineup;
     }
 
     public void playNextQuarter() {
@@ -63,18 +51,28 @@ public class Match implements Serializable{
 
         currentQuarter++;
 
-        // HESAPLAMA: Artık Team yerine sahadaki Lineup (Kadro) gücü kullanılıyor
+        // Kadro güçlerini hesapla
         int homePower = calculateLineupPower(homeLineup, homeTeam.getCoach());
         int awayPower = calculateLineupPower(awayLineup, awayTeam.getCoach());
 
-        // Skor üretimi (Random nesnesi yukarıdan geliyor)
-        int homeGoals = random.nextInt(Math.max(1, (homePower / 20) + 2));
-        int awayGoals = random.nextInt(Math.max(1, (awayPower / 20) + 2));
+        // SPORA ÖZEL SKOR MANTIĞI
+        if (sport instanceof VolleyballSport) {
+            // VOLEYBOL: Her çeyrek (set) bir takım tarafından kazanılır (1-0 veya 0-1)
+            // Güçlü olanın seti alma ihtimali daha yüksek ama şans faktörü var
+            if (homePower + random.nextInt(30) > awayPower + random.nextInt(30)) {
+                this.homeScore += 1;
+            } else {
+                this.awayScore += 1;
+            }
+        } else {
+            // FUTBOL / HEADBALL: Rastgele gol üretimi
+            int homeGoals = random.nextInt(Math.max(1, (homePower / 25) + 2));
+            int awayGoals = random.nextInt(Math.max(1, (awayPower / 25) + 2));
+            this.homeScore += homeGoals;
+            this.awayScore += awayGoals;
+        }
 
-        this.homeScore += homeGoals;
-        this.awayScore += awayGoals;
-
-        // Bitiş kontrolü Sport interface'inden dinamik gelmeli (Örn: Headball 4, Futbol 2)
+        // Bitiş kontrolü Sport interface'inden dinamik gelmeli
         if (currentQuarter >= sport.getQuarterCount()) {
             finishMatch();
         }
@@ -84,41 +82,41 @@ public class Match implements Serializable{
      * Sadece sahadaki (Lineup içindeki) oyuncuların ve koçun yeteneğini hesaplar.
      */
     private int calculateLineupPower(Lineup lineup, Coach coach) {
-        if (lineup == null) return 10;
+        if (lineup == null || lineup.getPlayers() == null || lineup.getPlayers().isEmpty()) {
+            return 10; // Kadro yoksa minimum güç
+        }
         int power = 0;
         for (Player p : lineup.getPlayers()) {
-            power += p.getSkill();
+            if (p != null) {
+                power += p.getSkill();
+            }
         }
         if (coach != null) {
             power += coach.getTrainingBonus();
         }
-        return power > 0 ? power : 10;
+        return Math.max(power, 10);
     }
 
     private void finishMatch() {
         this.isFinished = true;
-        applyInjuries(homeLineup); // Sadece maçta oynayanlar sakatlanabilir
+        applyInjuries(homeLineup);
         applyInjuries(awayLineup);
     }
 
-    /**
-     * Maç sonunda sahadaki oyuncularda %5 ihtimalle sakatlık oluşturur.
-     */
     private void applyInjuries(Lineup lineup) {
-        if (lineup==null){
-            return;
-        }
+        if (lineup == null || lineup.getPlayers() == null) return;
+
         for (Player player : lineup.getPlayers()) {
-            if (random.nextInt(100) < 5) {
+            if (player != null && random.nextInt(100) < 5) { // %5 sakatlık ihtimali
                 int injuryDuration = random.nextInt(3) + 1;
                 player.injureForMatches(injuryDuration);
             }
         }
     }
 
+    // Getter ve Setter Metodları
     public void setHomeLineup(Lineup homeLineup) { this.homeLineup = homeLineup; }
     public void setAwayLineup(Lineup awayLineup) { this.awayLineup = awayLineup; }
-
     public Team getHomeTeam() { return homeTeam; }
     public Team getAwayTeam() { return awayTeam; }
     public Sport getSport() { return sport; }

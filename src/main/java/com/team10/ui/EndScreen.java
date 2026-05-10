@@ -13,97 +13,85 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-
 import java.util.List;
 
 public class EndScreen {
 
     private final Stage stage;
 
-    public EndScreen(
-        MainWindow window,
-        List<TeamRecord> standings
-    ) {
-
+    public EndScreen(MainWindow window, List<TeamRecord> standings) {
         stage = new Stage();
-
         stage.initOwner(window.getStage());
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initStyle(StageStyle.UNDECORATED);
 
+        // Şampiyonu al
         TeamRecord winner = standings.get(0);
 
         Label title = new Label("SEASON FINISHED");
-        title.setStyle(
-            "-fx-font-size: 28px;" +
-                "-fx-font-weight: bold;" +
-                "-fx-text-fill: white;"
-        );
+        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
 
-        ImageView trophy = new ImageView(
-            new Image(
-                EndScreen.class.getResource("/images/trophy.png").toExternalForm()
-            )
-        );
+        // Kupa görselini hata korumalı yükle
+        ImageView trophy = new ImageView();
+        try {
+            var resource = getClass().getResource("/images/trophy.png");
+            if (resource != null) {
+                trophy.setImage(new Image(resource.toExternalForm()));
+            }
+        } catch (Exception e) {
+            System.out.println("Trophy image could not be loaded, skipping visual.");
+        }
 
-        trophy.setFitWidth(120);
-        trophy.setFitHeight(120);
+        trophy.setFitWidth(150);
         trophy.setPreserveRatio(true);
 
-        Label winnerLabel = new Label(
-            "Winner: " + winner.getTeam().getName()
-        );
-
-        winnerLabel.setStyle(
-            "-fx-font-size: 18px;" +
-                "-fx-text-fill: gold;"
-        );
+        Label winnerLabel = new Label("Champion: " + winner.getTeam().getName());
+        winnerLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: gold;");
 
         Button returnLeague = new Button("Return to League");
         Button mainMenu = new Button("Main Menu");
         Button quit = new Button("Quit");
 
+        // Senin UIHelper sınıfındaki metodları kullanıyoruz
         UIHelper.style(returnLeague);
         UIHelper.style(mainMenu);
         UIHelper.style(quit);
 
-        returnLeague.setOnAction(e -> {stage.close(); window.showLeague();});
+        returnLeague.setOnAction(e -> {
+            stage.close();
+            window.showLeague();
+        });
 
         mainMenu.setOnAction(e -> {
             stage.close();
-            Platform.runLater(window::showMainMenu);
+            AudioManager.stopBGM();
+            window.showMainMenu();
         });
 
         quit.setOnAction(e -> Platform.exit());
 
-        VBox root = new VBox(
-            18,
-            title,
-            trophy,
-            winnerLabel,
-            returnLeague,
-            mainMenu,
-            quit
-        );
-
+        VBox root = new VBox(20, title, trophy, winnerLabel, returnLeague, mainMenu, quit);
         root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(30));
 
+        // Şık bir bitiş paneli tasarımı
         root.setStyle(
-            "-fx-background-color: rgba(22,22,22,0.97);" +
-                "-fx-border-color: gold;" +
-                "-fx-border-width: 2;" +
-                "-fx-border-radius: 10;"
+                "-fx-background-color: rgba(20, 20, 20, 0.95);" +
+                        "-fx-border-color: gold;" +
+                        "-fx-border-width: 3;" +
+                        "-fx-border-radius: 15;" +
+                        "-fx-background-radius: 15;"
         );
 
-        stage.setScene(new Scene(root, 340, 450));
+        Scene scene = new Scene(root, 360, 500);
+        scene.setFill(null); // Köşelerin oval görünmesi için arkaplanı şeffaf yapıyoruz
+        stage.setScene(scene);
     }
 
     public void show() {
-
+        // Müzik yönetimi
         AudioManager.stopBGM();
         AudioManager.playSFX("/audio/winner.mp3");
-
-        stage.show();
+        stage.showAndWait();
     }
 }
