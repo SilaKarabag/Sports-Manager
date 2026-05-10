@@ -1,13 +1,15 @@
 package com.team10.ui;
 
-import com.team10.persistence.SaveManager;
+import java.io.File;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -44,13 +46,24 @@ public class MenuOverlay {
         returnButton.setOnAction(e -> menuStage.close());
 
         saveButton.setOnAction(e -> {
-            try {
-                SaveManager sm = new SaveManager();
-                sm.save(window.getController().getSession(), "savegame.dat");
-                System.out.println("Oyun Başarıyla Kaydedildi!");
-                menuStage.close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save Game");
+            fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("Sports Manager Save File", "*.dat")
+            );
+            fileChooser.setInitialFileName("savegame.dat");
+
+            File file = fileChooser.showSaveDialog(window.getStage());
+
+            if (file != null) {
+                try {
+                    window.getController().saveGame(file.getAbsolutePath());
+                    showInfo("Game Saved", "The game was saved successfully.");
+                    menuStage.close();
+                } catch (Exception ex) {
+                    showError("Save Failed", "The game could not be saved.");
+                    ex.printStackTrace();
+                }
             }
         });
 
@@ -85,5 +98,20 @@ public class MenuOverlay {
 
         menuStage.setScene(scene);
         menuStage.showAndWait();
+    }
+    private static void showInfo(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(title);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private static void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(title);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }
